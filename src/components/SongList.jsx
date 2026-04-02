@@ -11,7 +11,7 @@ function SongList({ songs, onDelete }) {
 
     try {
       await deleteSong(id);
-      onDelete && onDelete(); // recargar lista
+      onDelete && onDelete();
     } catch (error) {
       console.error(error);
       alert("Error al eliminar la canción");
@@ -40,7 +40,7 @@ function SongList({ songs, onDelete }) {
           "
         >
           {/* IMAGEN */}
-          <div className="relative">
+          <div className="relative overflow-hidden">
 
             <img
               src={song.coverUrl}
@@ -75,23 +75,27 @@ function SongList({ songs, onDelete }) {
               <Play size={18} fill="black" />
             </button>
 
-            {/* 🗑️ DELETE (NUEVO PRO) */}
+            {/* 🗑️ DELETE PRO (VISIBLE SIEMPRE) */}
             <button
               onClick={(e) => {
-                e.stopPropagation(); // 🚨 evita que se reproduzca
+                e.stopPropagation();
                 handleDelete(song._id);
               }}
               className="
                 absolute
                 top-2
                 right-2
-                bg-black/70
+                z-10
+                bg-black/80
+                backdrop-blur-sm
                 p-2
                 rounded-full
-                opacity-0
-                group-hover:opacity-100
-                transition
+                text-white
+                shadow-md
+                opacity-80
+                hover:opacity-100
                 hover:bg-red-500
+                transition
               "
             >
               <Trash2 size={16} />
