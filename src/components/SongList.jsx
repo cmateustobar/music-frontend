@@ -29,6 +29,7 @@ function SongList({ songs, onDelete }) {
       {songs.map((song, index) => (
         <div
           key={song._id}
+          onClick={() => playSong(song, songs, index)} // 🔥 FIX CLAVE
           className="
             bg-[#181818]
             p-3
@@ -40,7 +41,7 @@ function SongList({ songs, onDelete }) {
           "
         >
           {/* IMAGEN */}
-          <div className="relative overflow-hidden">
+          <div className="relative">
 
             <img
               src={song.coverUrl}
@@ -55,7 +56,10 @@ function SongList({ songs, onDelete }) {
 
             {/* ▶️ PLAY */}
             <button
-              onClick={() => playSong(song, songs, index)}
+              onClick={(e) => {
+                e.stopPropagation();
+                playSong(song, songs, index);
+              }}
               className="
                 absolute
                 bottom-2
@@ -75,7 +79,7 @@ function SongList({ songs, onDelete }) {
               <Play size={18} fill="black" />
             </button>
 
-            {/* 🗑️ DELETE PRO (VISIBLE SIEMPRE) */}
+            {/* 🗑️ DELETE PRO */}
             <button
               onClick={(e) => {
                 e.stopPropagation();
