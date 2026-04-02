@@ -1,8 +1,22 @@
 import { usePlayer } from "../context/PlayerContext";
-import { Play } from "lucide-react";
+import { Play, Trash2 } from "lucide-react";
+import { deleteSong } from "../services/api";
 
-function SongList({ songs }) {
+function SongList({ songs, onDelete }) {
   const { playSong } = usePlayer();
+
+  const handleDelete = async (id) => {
+    const confirmDelete = window.confirm("¿Eliminar esta canción?");
+    if (!confirmDelete) return;
+
+    try {
+      await deleteSong(id);
+      onDelete && onDelete(); // recargar lista
+    } catch (error) {
+      console.error(error);
+      alert("Error al eliminar la canción");
+    }
+  };
 
   return (
     <div
@@ -39,7 +53,7 @@ function SongList({ songs }) {
               "
             />
 
-            {/* BOTÓN PLAY */}
+            {/* ▶️ PLAY */}
             <button
               onClick={() => playSong(song, songs, index)}
               className="
@@ -60,6 +74,29 @@ function SongList({ songs }) {
             >
               <Play size={18} fill="black" />
             </button>
+
+            {/* 🗑️ DELETE (NUEVO PRO) */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation(); // 🚨 evita que se reproduzca
+                handleDelete(song._id);
+              }}
+              className="
+                absolute
+                top-2
+                right-2
+                bg-black/70
+                p-2
+                rounded-full
+                opacity-0
+                group-hover:opacity-100
+                transition
+                hover:bg-red-500
+              "
+            >
+              <Trash2 size={16} />
+            </button>
+
           </div>
 
           {/* INFO */}

@@ -73,7 +73,10 @@ function Home() {
         {loading ? (
           <p className="text-gray-500">Cargando...</p>
         ) : songs.length > 0 ? (
-          <SongList songs={songs} />
+          <SongList 
+            songs={songs} 
+            onDelete={loadSongs}   // 🔥 CLAVE (ACTUALIZA LISTA)
+          />
         ) : (
           <p className="text-gray-500 text-sm">
             No hay canciones disponibles
