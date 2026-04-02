@@ -4,12 +4,11 @@ import SongList from "./SongList";
 
 function Home() {
   const [songs, setSongs] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  /* =========================
-     🔥 LOAD SONGS
-  ========================= */
   const loadSongs = async () => {
     try {
+      setLoading(true);
       const data = await fetchSongs();
 
       console.log("🎵 canciones recibidas:", data);
@@ -17,13 +16,14 @@ function Home() {
       if (Array.isArray(data)) {
         setSongs(data);
       } else {
-        console.warn("⚠️ Formato inesperado:", data);
         setSongs([]);
       }
 
     } catch (error) {
       console.error("❌ Error cargando canciones:", error);
       setSongs([]);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -31,9 +31,6 @@ function Home() {
     loadSongs();
   }, []);
 
-  /* =========================
-     🔥 SUBIR CANCIÓN (FIX REAL)
-  ========================= */
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -44,24 +41,17 @@ function Home() {
     formData.append("image", e.target.image.files[0]);
 
     try {
-      const res = await uploadSong(formData);
+      await uploadSong(formData);
 
-      console.log("📦 respuesta upload:", res);
-
-      // 🔥 IMPORTANTE: no romper si hay error de fetch
       alert("Canción subida 🚀");
 
       e.target.reset();
 
-      // 🔥 recargar lista SIEMPRE
       await loadSongs();
 
     } catch (error) {
       console.error("❌ Error al subir canción:", error);
-
-      // 🔥 fallback UX (porque sí sube)
-      alert("Canción subida (posible retraso en actualización)");
-      await loadSongs();
+      alert("Error al subir canción ❌");
     }
   };
 
@@ -71,16 +61,18 @@ function Home() {
 
         {/* HEADER */}
         <div>
-          <h1 className="text-3xl font-bold text-white mb-2">
+          <h1 className="text-3xl font-bold text-white">
             Inicio
           </h1>
-          <p className="text-gray-400 text-sm">
+          <p className="text-gray-400 text-sm mt-1">
             Tus canciones recientes
           </p>
         </div>
 
         {/* LISTA */}
-        {songs.length > 0 ? (
+        {loading ? (
+          <p className="text-gray-500">Cargando...</p>
+        ) : songs.length > 0 ? (
           <SongList songs={songs} />
         ) : (
           <p className="text-gray-500 text-sm">
@@ -88,8 +80,9 @@ function Home() {
           </p>
         )}
 
-        {/* SUBIR */}
-        <div className="bg-[#181818] p-6 rounded-xl max-w-md">
+        {/* FORMULARIO */}
+        <div className="bg-[#181818] p-6 rounded-2xl shadow-lg max-w-lg">
+
           <h2 className="text-lg font-semibold text-white mb-4">
             Subir canción
           </h2>
@@ -101,7 +94,7 @@ function Home() {
               type="text"
               placeholder="Título"
               required
-              className="w-full p-2 rounded bg-[#282828] text-white outline-none focus:ring-2 focus:ring-green-500"
+              className="w-full p-3 rounded-lg bg-[#282828] text-white outline-none focus:ring-2 focus:ring-green-500"
             />
 
             <input
@@ -109,7 +102,7 @@ function Home() {
               type="text"
               placeholder="Artista"
               required
-              className="w-full p-2 rounded bg-[#282828] text-white outline-none focus:ring-2 focus:ring-green-500"
+              className="w-full p-3 rounded-lg bg-[#282828] text-white outline-none focus:ring-2 focus:ring-green-500"
             />
 
             <input

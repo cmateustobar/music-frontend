@@ -1,71 +1,82 @@
-import { usePlayer } from "../context/PlayerContext";
+import { useContext } from "react";
+import { PlayerContext } from "../context/PlayerContext";
+import { Play } from "lucide-react";
 
 function SongList({ songs }) {
-  const { playSong, currentSong } = usePlayer();
-
-  if (!songs || songs.length === 0) {
-    return <p className="text-gray-400">No hay canciones</p>;
-  }
+  const { playSong } = useContext(PlayerContext);
 
   return (
-    <div className="w-full">
+    <div
+      className="
+        grid
+        grid-cols-[repeat(auto-fill,minmax(180px,1fr))]
+        gap-6
+      "
+    >
+      {songs.map((song) => (
+        <div
+          key={song._id}
+          className="
+            bg-[#181818]
+            p-4
+            rounded-xl
+            hover:bg-[#282828]
+            transition
+            group
+            cursor-pointer
+          "
+        >
+          {/* IMAGEN */}
+          <div className="relative">
 
-      {/* 🔥 GRID PRO (tamaño fijo inteligente) */}
-      <div className="
-        grid 
-        gap-4
-        justify-center
-        [grid-template-columns:repeat(auto-fill,minmax(140px,1fr))]
-      ">
+            <img
+              src={song.coverUrl}
+              alt={song.title}
+              className="
+                w-full
+                aspect-square
+                object-cover
+                rounded-lg
+              "
+            />
 
-        {songs.map((song, index) => {
-          const isActive = currentSong?._id === song._id;
-
-          return (
-            <div
-              key={song._id}
-              onClick={() => playSong(song, songs, index)}
-              className={`
-                w-[140px]
-                p-3 rounded-lg cursor-pointer transition group
-                ${isActive ? "bg-[#282828]" : "bg-[#181818] hover:bg-[#242424]"}
-              `}
+            {/* BOTÓN PLAY */}
+            <button
+              onClick={() => playSong(song)}
+              className="
+                absolute
+                bottom-2
+                right-2
+                bg-green-500
+                p-3
+                rounded-full
+                shadow-lg
+                opacity-0
+                translate-y-3
+                group-hover:opacity-100
+                group-hover:translate-y-0
+                transition-all
+                duration-300
+              "
             >
-              {/* COVER */}
-              <div className="aspect-square mb-2 rounded-md overflow-hidden relative">
-                
-                <img
-                  src={song.coverUrl}
-                  alt=""
-                  className="w-full h-full object-cover group-hover:scale-105 transition"
-                />
+              <Play size={18} fill="black" />
+            </button>
+          </div>
 
-                {/* BOTÓN PLAY */}
-                <div className="
-                  absolute bottom-2 right-2
-                  bg-green-500 w-8 h-8 rounded-full
-                  flex items-center justify-center
-                  text-black text-xs
-                  opacity-0 translate-y-3
-                  group-hover:opacity-100 group-hover:translate-y-0
-                  transition shadow-lg
-                ">
-                  ▶
-                </div>
-              </div>
+          {/* INFO */}
+          <div className="mt-3 space-y-1">
 
-              {/* INFO */}
-              <p className="text-white text-[12px] font-semibold truncate">
-                {song.title}
-              </p>
-              <p className="text-gray-400 text-[11px] truncate">
-                {song.artist}
-              </p>
-            </div>
-          );
-        })}
+            <p className="text-white text-sm font-semibold truncate">
+              {song.title}
+            </p>
 
-      </div>
+            <p className="text-gray-400 text-xs truncate">
+              {song.artist}
+            </p>
+
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
