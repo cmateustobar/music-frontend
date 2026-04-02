@@ -27,7 +27,7 @@ export const PlayerProvider = ({ children }) => {
   const [history, setHistory] = useState([]);
 
   // =========================
-  // 🎧 INIT AUDIO (singleton)
+  // 🎧 INIT AUDIO
   // =========================
   useEffect(() => {
     const audio = new Audio();
@@ -37,7 +37,6 @@ export const PlayerProvider = ({ children }) => {
     const savedVolume = localStorage.getItem("volume");
     if (savedVolume) audio.volume = Number(savedVolume);
 
-    // 🎯 EVENTOS CENTRALIZADOS
     const updateTime = () => {
       setCurrentTime(audio.currentTime || 0);
       setDuration(audio.duration || 0);
@@ -61,18 +60,11 @@ export const PlayerProvider = ({ children }) => {
     return () => {
       audio.pause();
       audio.src = "";
-
-      audio.removeEventListener("timeupdate", updateTime);
-      audio.removeEventListener("loadedmetadata", updateTime);
-      audio.removeEventListener("ended", handleEnded);
-      audio.removeEventListener("waiting", handleWaiting);
-      audio.removeEventListener("playing", handlePlaying);
-      audio.removeEventListener("pause", handlePause);
     };
   }, []);
 
   // =========================
-  // 🔗 URL FIX (Cloudinary + local)
+  // 🔗 URL FIX (MEJORADO)
   // =========================
   const getFullUrl = (url) => {
     if (!url) return "";
@@ -80,38 +72,7 @@ export const PlayerProvider = ({ children }) => {
   };
 
   // =========================
-  // 🕓 HISTORY
-  // =========================
-  const addToHistory = (song) => {
-    setHistory((prev) => {
-      const updated = [song, ...prev.filter((s) => s._id !== song._id)];
-      return updated.slice(0, 20);
-    });
-  };
-
-  // =========================
-  // ❤️ FAVORITOS
-  // =========================
-  const toggleFavorite = (song) => {
-    let updated;
-
-    if (favorites.find((s) => s._id === song._id)) {
-      updated = favorites.filter((s) => s._id !== song._id);
-    } else {
-      updated = [...favorites, song];
-    }
-
-    setFavorites(updated);
-    localStorage.setItem("favorites", JSON.stringify(updated));
-  };
-
-  // =========================
-  // 🔀 SHUFFLE
-  // =========================
-  const toggleShuffle = () => setIsShuffle((prev) => !prev);
-
-  // =========================
-  // ▶️ PLAY (ANTI-RACE CONDITION)
+  // ▶️ PLAY (FIX DEFINITIVO)
   // =========================
   const playSong = async (song, list = [], index = 0) => {
     if (!song || !audioRef.current) return;
@@ -119,11 +80,22 @@ export const PlayerProvider = ({ children }) => {
     const audio = audioRef.current;
 
     try {
+      console.log("🎧 Reproduciendo:", song);
+
       audio.pause();
       setIsBuffering(true);
 
-      const url = getFullUrl(song.audioUrl || song.audio);
-      if (!url) return;
+      // 🔥 SOPORTE COMPLETO
+      const rawUrl = song.audioUrl || song.audio || song.url;
+
+      if (!rawUrl) {
+        console.error("❌ No hay URL de audio:", song);
+        return;
+      }
+
+      const url = getFullUrl(rawUrl);
+
+      console.log("🔗 URL final:", url);
 
       audio.src = url;
       audio.currentTime = 0;
@@ -140,14 +112,24 @@ export const PlayerProvider = ({ children }) => {
       setIsBuffering(false);
 
     } catch (err) {
-      console.warn("Error en reproducción:", err);
+      console.error("❌ Error reproducción:", err);
       setIsPlaying(false);
       setIsBuffering(false);
     }
   };
 
   // =========================
-  // ⏯️ TOGGLE (SIN BUG)
+  // 🕓 HISTORY
+  // =========================
+  const addToHistory = (song) => {
+    setHistory((prev) => {
+      const updated = [song, ...prev.filter((s) => s._id !== song._id)];
+      return updated.slice(0, 20);
+    });
+  };
+
+  // =========================
+  // ⏯️ TOGGLE
   // =========================
   const togglePlay = async () => {
     const audio = audioRef.current;
@@ -170,13 +152,9 @@ export const PlayerProvider = ({ children }) => {
   const nextSong = () => {
     if (queue.length === 0) return;
 
-    let nextIndex;
-
-    if (isShuffle) {
-      nextIndex = Math.floor(Math.random() * queue.length);
-    } else {
-      nextIndex = (queueIndex + 1) % queue.length;
-    }
+    const nextIndex = isShuffle
+      ? Math.floor(Math.random() * queue.length)
+      : (queueIndex + 1) % queue.length;
 
     playSong(queue[nextIndex], queue, nextIndex);
   };
@@ -197,28 +175,23 @@ export const PlayerProvider = ({ children }) => {
   // ⏱️ SEEK
   // =========================
   const seek = (time) => {
-    const audio = audioRef.current;
-    if (!audio) return;
+    if (!audioRef.current) return;
 
-    audio.currentTime = time;
+    audioRef.current.currentTime = time;
     setCurrentTime(time);
   };
 
   // =========================
-  // 🔊 VOLUMEN (persistente)
+  // 🔊 VOLUMEN
   // =========================
   const setVolume = (value) => {
-    const audio = audioRef.current;
-    if (!audio) return;
+    if (!audioRef.current) return;
 
     const v = Math.max(0, Math.min(1, value));
-    audio.volume = v;
+    audioRef.current.volume = v;
     localStorage.setItem("volume", v);
   };
 
-  // =========================
-  // 🎯 PROVIDER
-  // =========================
   return (
     <PlayerContext.Provider
       value={{
@@ -241,7 +214,6 @@ export const PlayerProvider = ({ children }) => {
         toggleShuffle,
 
         favorites,
-        toggleFavorite,
         history,
       }}
     >
