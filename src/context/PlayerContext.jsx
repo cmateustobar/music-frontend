@@ -27,25 +27,52 @@ export const PlayerProvider = ({ children }) => {
   const [history, setHistory] = useState([]);
 
   // =========================
-  // 🎧 INIT AUDIO (IMPORTANTE)
+  // 🎧 INIT AUDIO (singleton)
   // =========================
   useEffect(() => {
-    audioRef.current = new Audio();
-    audioRef.current.preload = "auto";
+    const audio = new Audio();
+    audio.preload = "auto";
+    audioRef.current = audio;
 
     const savedVolume = localStorage.getItem("volume");
-    if (savedVolume) {
-      audioRef.current.volume = Number(savedVolume);
-    }
+    if (savedVolume) audio.volume = Number(savedVolume);
+
+    // 🎯 EVENTOS CENTRALIZADOS
+    const updateTime = () => {
+      setCurrentTime(audio.currentTime || 0);
+      setDuration(audio.duration || 0);
+    };
+
+    const handleEnded = () => nextSong();
+    const handleWaiting = () => setIsBuffering(true);
+    const handlePlaying = () => {
+      setIsBuffering(false);
+      setIsPlaying(true);
+    };
+    const handlePause = () => setIsPlaying(false);
+
+    audio.addEventListener("timeupdate", updateTime);
+    audio.addEventListener("loadedmetadata", updateTime);
+    audio.addEventListener("ended", handleEnded);
+    audio.addEventListener("waiting", handleWaiting);
+    audio.addEventListener("playing", handlePlaying);
+    audio.addEventListener("pause", handlePause);
 
     return () => {
-      audioRef.current.pause();
-      audioRef.current = null;
+      audio.pause();
+      audio.src = "";
+
+      audio.removeEventListener("timeupdate", updateTime);
+      audio.removeEventListener("loadedmetadata", updateTime);
+      audio.removeEventListener("ended", handleEnded);
+      audio.removeEventListener("waiting", handleWaiting);
+      audio.removeEventListener("playing", handlePlaying);
+      audio.removeEventListener("pause", handlePause);
     };
   }, []);
 
   // =========================
-  // 🔗 URL FIX
+  // 🔗 URL FIX (Cloudinary + local)
   // =========================
   const getFullUrl = (url) => {
     if (!url) return "";
@@ -84,15 +111,16 @@ export const PlayerProvider = ({ children }) => {
   const toggleShuffle = () => setIsShuffle((prev) => !prev);
 
   // =========================
-  // ▶️ PLAY
+  // ▶️ PLAY (ANTI-RACE CONDITION)
   // =========================
-  const playSong = (song, list = [], index = 0) => {
+  const playSong = async (song, list = [], index = 0) => {
     if (!song || !audioRef.current) return;
 
     const audio = audioRef.current;
 
     try {
       audio.pause();
+      setIsBuffering(true);
 
       const url = getFullUrl(song.audioUrl || song.audio);
       if (!url) return;
@@ -100,45 +128,39 @@ export const PlayerProvider = ({ children }) => {
       audio.src = url;
       audio.currentTime = 0;
 
-      setIsBuffering(true);
-
-      audio.onloadeddata = () => {
-        audio.play()
-          .then(() => {
-            setIsPlaying(true);
-            setIsBuffering(false);
-          })
-          .catch((err) => {
-            console.warn("Autoplay bloqueado:", err);
-            setIsPlaying(false);
-            setIsBuffering(false);
-          });
-      };
-
+      setCurrentSong(song);
       setQueue(list);
       setQueueIndex(index);
-      setCurrentSong(song);
 
       addToHistory(song);
 
+      await audio.play();
+
+      setIsPlaying(true);
+      setIsBuffering(false);
+
     } catch (err) {
-      console.error("Error en playSong:", err);
+      console.warn("Error en reproducción:", err);
+      setIsPlaying(false);
+      setIsBuffering(false);
     }
   };
 
   // =========================
-  // ⏯️ PLAY / PAUSE
+  // ⏯️ TOGGLE (SIN BUG)
   // =========================
-  const togglePlay = () => {
+  const togglePlay = async () => {
     const audio = audioRef.current;
     if (!audio || !audio.src) return;
 
-    if (isPlaying) {
-      audio.pause();
-      setIsPlaying(false);
-    } else {
-      audio.play().catch(() => {});
-      setIsPlaying(true);
+    try {
+      if (audio.paused) {
+        await audio.play();
+      } else {
+        audio.pause();
+      }
+    } catch (err) {
+      console.warn("Error toggle:", err);
     }
   };
 
@@ -175,50 +197,24 @@ export const PlayerProvider = ({ children }) => {
   // ⏱️ SEEK
   // =========================
   const seek = (time) => {
-    if (!audioRef.current) return;
-    audioRef.current.currentTime = time;
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    audio.currentTime = time;
     setCurrentTime(time);
   };
 
   // =========================
-  // 🔊 VOLUMEN
+  // 🔊 VOLUMEN (persistente)
   // =========================
   const setVolume = (value) => {
-    if (!audioRef.current) return;
-
-    const v = Math.max(0, Math.min(1, value));
-    audioRef.current.volume = v;
-    localStorage.setItem("volume", v);
-  };
-
-  // =========================
-  // 🎧 EVENTOS AUDIO
-  // =========================
-  useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
 
-    const updateTime = () => {
-      setCurrentTime(audio.currentTime || 0);
-      setDuration(audio.duration || 0);
-    };
-
-    const handleEnded = () => nextSong();
-    const handleWaiting = () => setIsBuffering(true);
-    const handlePlaying = () => setIsBuffering(false);
-
-    audio.addEventListener("timeupdate", updateTime);
-    audio.addEventListener("ended", handleEnded);
-    audio.addEventListener("waiting", handleWaiting);
-    audio.addEventListener("playing", handlePlaying);
-
-    return () => {
-      audio.removeEventListener("timeupdate", updateTime);
-      audio.removeEventListener("ended", handleEnded);
-      audio.removeEventListener("waiting", handleWaiting);
-      audio.removeEventListener("playing", handlePlaying);
-    };
-  }, [queueIndex, queue, isShuffle]);
+    const v = Math.max(0, Math.min(1, value));
+    audio.volume = v;
+    localStorage.setItem("volume", v);
+  };
 
   // =========================
   // 🎯 PROVIDER
@@ -254,5 +250,4 @@ export const PlayerProvider = ({ children }) => {
   );
 };
 
-// Hook limpio (OBLIGATORIO usar este)
 export const usePlayer = () => useContext(PlayerContext);
