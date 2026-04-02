@@ -8,7 +8,6 @@ export const PlayerProvider = ({ children }) => {
   const audioRef = useRef(null);
 
   const [currentSong, setCurrentSong] = useState(null);
-
   const [queue, setQueue] = useState([]);
   const [queueIndex, setQueueIndex] = useState(0);
 
@@ -42,20 +41,15 @@ export const PlayerProvider = ({ children }) => {
       setDuration(audio.duration || 0);
     };
 
-    const handleEnded = () => nextSong();
-    const handleWaiting = () => setIsBuffering(true);
-    const handlePlaying = () => {
-      setIsBuffering(false);
-      setIsPlaying(true);
-    };
-    const handlePause = () => setIsPlaying(false);
-
     audio.addEventListener("timeupdate", updateTime);
     audio.addEventListener("loadedmetadata", updateTime);
-    audio.addEventListener("ended", handleEnded);
-    audio.addEventListener("waiting", handleWaiting);
-    audio.addEventListener("playing", handlePlaying);
-    audio.addEventListener("pause", handlePause);
+    audio.addEventListener("ended", () => nextSong());
+    audio.addEventListener("playing", () => {
+      setIsPlaying(true);
+      setIsBuffering(false);
+    });
+    audio.addEventListener("pause", () => setIsPlaying(false));
+    audio.addEventListener("waiting", () => setIsBuffering(true));
 
     return () => {
       audio.pause();
@@ -64,7 +58,7 @@ export const PlayerProvider = ({ children }) => {
   }, []);
 
   // =========================
-  // 🔗 URL FIX (MEJORADO)
+  // 🔗 URL
   // =========================
   const getFullUrl = (url) => {
     if (!url) return "";
@@ -72,50 +66,48 @@ export const PlayerProvider = ({ children }) => {
   };
 
   // =========================
-  // ▶️ PLAY (FIX DEFINITIVO)
+  // ▶️ PLAY (FIX REAL)
   // =========================
-  const playSong = async (song, list = [], index = 0) => {
+  const playSong = (song, list = [], index = 0) => {
     if (!song || !audioRef.current) return;
 
     const audio = audioRef.current;
 
-    try {
-      console.log("🎧 Reproduciendo:", song);
+    console.log("🎧 Click canción:", song);
 
-      audio.pause();
-      setIsBuffering(true);
+    const rawUrl = song.audioUrl || song.audio || song.url;
 
-      // 🔥 SOPORTE COMPLETO
-      const rawUrl = song.audioUrl || song.audio || song.url;
-
-      if (!rawUrl) {
-        console.error("❌ No hay URL de audio:", song);
-        return;
-      }
-
-      const url = getFullUrl(rawUrl);
-
-      console.log("🔗 URL final:", url);
-
-      audio.src = url;
-      audio.currentTime = 0;
-
-      setCurrentSong(song);
-      setQueue(list);
-      setQueueIndex(index);
-
-      addToHistory(song);
-
-      await audio.play();
-
-      setIsPlaying(true);
-      setIsBuffering(false);
-
-    } catch (err) {
-      console.error("❌ Error reproducción:", err);
-      setIsPlaying(false);
-      setIsBuffering(false);
+    if (!rawUrl) {
+      console.error("❌ No hay URL de audio:", song);
+      return;
     }
+
+    const url = getFullUrl(rawUrl);
+
+    console.log("🔗 URL final:", url);
+
+    // 🔥 RESET TOTAL
+    audio.pause();
+    audio.src = url;
+    audio.currentTime = 0;
+
+    setCurrentSong(song);
+    setQueue(list);
+    setQueueIndex(index);
+
+    addToHistory(song);
+
+    // 🔥 CLAVE PARA QUE FUNCIONE EN VERCEL
+    audio.load();
+
+    audio
+      .play()
+      .then(() => {
+        console.log("✅ Reproduciendo OK");
+      })
+      .catch((err) => {
+        console.error("❌ Error play():", err);
+      });
   };
 
   // =========================
@@ -131,18 +123,14 @@ export const PlayerProvider = ({ children }) => {
   // =========================
   // ⏯️ TOGGLE
   // =========================
-  const togglePlay = async () => {
+  const togglePlay = () => {
     const audio = audioRef.current;
     if (!audio || !audio.src) return;
 
-    try {
-      if (audio.paused) {
-        await audio.play();
-      } else {
-        audio.pause();
-      }
-    } catch (err) {
-      console.warn("Error toggle:", err);
+    if (audio.paused) {
+      audio.play();
+    } else {
+      audio.pause();
     }
   };
 
@@ -211,7 +199,7 @@ export const PlayerProvider = ({ children }) => {
         setVolume,
 
         isShuffle,
-        toggleShuffle,
+        setIsShuffle,
 
         favorites,
         history,
