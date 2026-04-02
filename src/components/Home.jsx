@@ -6,9 +6,23 @@ function Home() {
   const [songs, setSongs] = useState([]);
 
   const loadSongs = async () => {
-    const data = await fetchSongs();
-    console.log("Songs recibidas:", data);
-    setSongs(data);
+    try {
+      const data = await fetchSongs();
+
+      console.log("🎵 canciones recibidas:", data);
+
+      // 🔥 VALIDACIÓN PRO
+      if (Array.isArray(data)) {
+        setSongs(data);
+      } else {
+        console.warn("⚠️ Formato inesperado:", data);
+        setSongs([]);
+      }
+
+    } catch (error) {
+      console.error("❌ Error cargando canciones:", error);
+      setSongs([]);
+    }
   };
 
   useEffect(() => {
@@ -33,18 +47,17 @@ function Home() {
 
       loadSongs();
     } catch (error) {
-      console.error(error);
+      console.error("❌ Error al subir canción:", error);
       alert("Error al subir canción ❌");
     }
   };
 
   return (
     <div className="flex-1 overflow-y-auto pb-32">
-
-      {/* CONTENEDOR CENTRAL 🔥 */}
+      {/* CONTENEDOR CENTRAL */}
       <div className="max-w-[1400px] mx-auto px-6 space-y-10">
 
-        {/* 🎧 HEADER */}
+        {/* HEADER */}
         <div>
           <h1 className="text-3xl font-bold text-white mb-2">
             Inicio
@@ -54,10 +67,16 @@ function Home() {
           </p>
         </div>
 
-        {/* 🎵 LISTA DE CANCIONES */}
-        <SongList songs={songs} />
+        {/* LISTA */}
+        {songs.length > 0 ? (
+          <SongList songs={songs} />
+        ) : (
+          <p className="text-gray-500 text-sm">
+            No hay canciones disponibles
+          </p>
+        )}
 
-        {/* ⬆️ SUBIR CANCIÓN */}
+        {/* SUBIR */}
         <div className="bg-[#181818] p-6 rounded-xl max-w-md">
           <h2 className="text-lg font-semibold text-white mb-4">
             Subir canción
@@ -70,11 +89,7 @@ function Home() {
               type="text"
               placeholder="Título"
               required
-              className="
-                w-full p-2 rounded 
-                bg-[#282828] text-white
-                outline-none focus:ring-2 focus:ring-green-500
-              "
+              className="w-full p-2 rounded bg-[#282828] text-white outline-none focus:ring-2 focus:ring-green-500"
             />
 
             <input
@@ -82,11 +97,7 @@ function Home() {
               type="text"
               placeholder="Artista"
               required
-              className="
-                w-full p-2 rounded 
-                bg-[#282828] text-white
-                outline-none focus:ring-2 focus:ring-green-500
-              "
+              className="w-full p-2 rounded bg-[#282828] text-white outline-none focus:ring-2 focus:ring-green-500"
             />
 
             <input
@@ -107,15 +118,7 @@ function Home() {
 
             <button
               type="submit"
-              className="
-                w-full
-                bg-green-500 
-                py-2 rounded-full 
-                font-semibold 
-                text-black
-                hover:bg-green-400 
-                transition
-              "
+              className="w-full bg-green-500 py-2 rounded-full font-semibold text-black hover:bg-green-400 transition"
             >
               Subir canción
             </button>
