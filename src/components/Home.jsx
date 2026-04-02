@@ -4,14 +4,16 @@ import SongList from "./SongList";
 
 function Home() {
   const [songs, setSongs] = useState([]);
+  const [loading, setLoading] = useState(true); // 🔥 NUEVO
 
   const loadSongs = async () => {
     try {
+      setLoading(true); // 🔥 IMPORTANTE
+
       const data = await fetchSongs();
 
       console.log("🎵 canciones recibidas:", data);
 
-      // 🔥 VALIDACIÓN PRO
       if (Array.isArray(data)) {
         setSongs(data);
       } else {
@@ -22,6 +24,8 @@ function Home() {
     } catch (error) {
       console.error("❌ Error cargando canciones:", error);
       setSongs([]);
+    } finally {
+      setLoading(false); // 🔥 CLAVE
     }
   };
 
@@ -54,7 +58,6 @@ function Home() {
 
   return (
     <div className="flex-1 overflow-y-auto pb-32">
-      {/* CONTENEDOR CENTRAL */}
       <div className="max-w-[1400px] mx-auto px-6 space-y-10">
 
         {/* HEADER */}
@@ -67,8 +70,10 @@ function Home() {
           </p>
         </div>
 
-        {/* LISTA */}
-        {songs.length > 0 ? (
+        {/* 🔥 ESTADOS CONTROLADOS */}
+        {loading ? (
+          <p className="text-gray-400 text-sm">Cargando canciones...</p>
+        ) : songs.length > 0 ? (
           <SongList songs={songs} />
         ) : (
           <p className="text-gray-500 text-sm">

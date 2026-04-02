@@ -1,21 +1,21 @@
 const BASE_URL = import.meta.env.VITE_API_URL;
 
 /* =========================
-   🔥 FETCH SONGS (ROBUSTO)
+   FETCH SONGS
 ========================= */
 export const fetchSongs = async () => {
   try {
     const res = await fetch(`${BASE_URL}/api/songs`);
 
     if (!res.ok) {
-      throw new Error(`Error HTTP: ${res.status}`);
+      throw new Error(`HTTP error: ${res.status}`);
     }
 
     const data = await res.json();
 
     console.log("🎵 canciones recibidas:", data);
 
-    // 🔥 NORMALIZACIÓN (CLAVE)
+    // 🔥 NORMALIZACIÓN
     return Array.isArray(data) ? data : data.songs || [];
 
   } catch (error) {
@@ -25,7 +25,7 @@ export const fetchSongs = async () => {
 };
 
 /* =========================
-   🔥 UPLOAD SONG
+   UPLOAD SONG
 ========================= */
 export const uploadSong = async (formData) => {
   try {
@@ -35,7 +35,7 @@ export const uploadSong = async (formData) => {
     });
 
     if (!res.ok) {
-      throw new Error(`Error HTTP: ${res.status}`);
+      throw new Error(`HTTP error: ${res.status}`);
     }
 
     const data = await res.json();
