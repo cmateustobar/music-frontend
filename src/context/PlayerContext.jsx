@@ -1,11 +1,11 @@
 import { createContext, useContext, useEffect, useRef, useState } from "react";
 
-const PlayerContext = createContext();
-const BASE_URL = import.meta.env.VITE_API_URL;
+export const PlayerContext = createContext();
+
+const BASE_URL = import.meta.env.VITE_API_URL || "";
 
 export const PlayerProvider = ({ children }) => {
-  const audioRef = useRef(new Audio());
-  const nextAudioRef = useRef(new Audio());
+  const audioRef = useRef(null);
 
   const [currentSong, setCurrentSong] = useState(null);
 
@@ -17,7 +17,6 @@ export const PlayerProvider = ({ children }) => {
   const [duration, setDuration] = useState(0);
   const [isBuffering, setIsBuffering] = useState(false);
 
-  // 🔥 NUEVO
   const [isShuffle, setIsShuffle] = useState(false);
 
   const [favorites, setFavorites] = useState(() => {
@@ -27,12 +26,35 @@ export const PlayerProvider = ({ children }) => {
 
   const [history, setHistory] = useState([]);
 
+  // =========================
+  // 🎧 INIT AUDIO (IMPORTANTE)
+  // =========================
+  useEffect(() => {
+    audioRef.current = new Audio();
+    audioRef.current.preload = "auto";
+
+    const savedVolume = localStorage.getItem("volume");
+    if (savedVolume) {
+      audioRef.current.volume = Number(savedVolume);
+    }
+
+    return () => {
+      audioRef.current.pause();
+      audioRef.current = null;
+    };
+  }, []);
+
+  // =========================
+  // 🔗 URL FIX
+  // =========================
   const getFullUrl = (url) => {
     if (!url) return "";
-    const finalUrl = url.startsWith("http") ? url : `${BASE_URL}${url}`;
-    return `${finalUrl}?t=${Date.now()}`;
+    return url.startsWith("http") ? url : `${BASE_URL}${url}`;
   };
 
+  // =========================
+  // 🕓 HISTORY
+  // =========================
   const addToHistory = (song) => {
     setHistory((prev) => {
       const updated = [song, ...prev.filter((s) => s._id !== song._id)];
@@ -40,6 +62,9 @@ export const PlayerProvider = ({ children }) => {
     });
   };
 
+  // =========================
+  // ❤️ FAVORITOS
+  // =========================
   const toggleFavorite = (song) => {
     let updated;
 
@@ -53,143 +78,132 @@ export const PlayerProvider = ({ children }) => {
     localStorage.setItem("favorites", JSON.stringify(updated));
   };
 
+  // =========================
+  // 🔀 SHUFFLE
+  // =========================
   const toggleShuffle = () => setIsShuffle((prev) => !prev);
 
+  // =========================
+  // ▶️ PLAY
+  // =========================
   const playSong = (song, list = [], index = 0) => {
+    if (!song || !audioRef.current) return;
+
     const audio = audioRef.current;
 
-    const src = getFullUrl(song.audioUrl || song.audio);
+    try {
+      audio.pause();
 
-    audio.pause();
-    audio.currentTime = 0;
-    audio.src = src;
-    audio.load();
+      const url = getFullUrl(song.audioUrl || song.audio);
+      if (!url) return;
 
-    setIsBuffering(true);
+      audio.src = url;
+      audio.currentTime = 0;
 
-    audio.onloadeddata = () => {
-      audio.play();
-      setIsPlaying(true);
-      setIsBuffering(false);
-    };
+      setIsBuffering(true);
 
-    setQueue(list);
-    setQueueIndex(index);
-    setCurrentSong(song);
+      audio.onloadeddata = () => {
+        audio.play()
+          .then(() => {
+            setIsPlaying(true);
+            setIsBuffering(false);
+          })
+          .catch((err) => {
+            console.warn("Autoplay bloqueado:", err);
+            setIsPlaying(false);
+            setIsBuffering(false);
+          });
+      };
 
-    addToHistory(song);
+      setQueue(list);
+      setQueueIndex(index);
+      setCurrentSong(song);
+
+      addToHistory(song);
+
+    } catch (err) {
+      console.error("Error en playSong:", err);
+    }
   };
 
+  // =========================
+  // ⏯️ PLAY / PAUSE
+  // =========================
   const togglePlay = () => {
     const audio = audioRef.current;
-    const nextAudio = nextAudioRef.current;
+    if (!audio || !audio.src) return;
 
     if (isPlaying) {
       audio.pause();
-      nextAudio.pause();
       setIsPlaying(false);
     } else {
-      audio.play();
+      audio.play().catch(() => {});
       setIsPlaying(true);
     }
   };
 
-  const crossfadeToNext = () => {
+  // =========================
+  // ⏭️ NEXT
+  // =========================
+  const nextSong = () => {
     if (queue.length === 0) return;
 
     let nextIndex;
 
     if (isShuffle) {
-      let random;
-      do {
-        random = Math.floor(Math.random() * queue.length);
-      } while (random === queueIndex && queue.length > 1);
-
-      nextIndex = random;
+      nextIndex = Math.floor(Math.random() * queue.length);
     } else {
-      if (queueIndex >= queue.length - 1) return;
-      nextIndex = queueIndex + 1;
+      nextIndex = (queueIndex + 1) % queue.length;
     }
 
-    const currentAudio = audioRef.current;
-    const nextAudio = nextAudioRef.current;
-
-    const next = queue[nextIndex];
-    const nextSrc = getFullUrl(next.audioUrl || next.audio);
-
-    nextAudio.pause();
-    nextAudio.currentTime = 0;
-    nextAudio.src = nextSrc;
-    nextAudio.volume = 0;
-
-    nextAudio.play();
-
-    let fade = 0;
-
-    const interval = setInterval(() => {
-      fade += 0.05;
-
-      const currentVol = Math.max(0, Math.min(1, 1 - fade));
-      const nextVol = Math.max(0, Math.min(1, fade));
-
-      currentAudio.volume = currentVol;
-      nextAudio.volume = nextVol;
-
-      if (fade >= 1) {
-        clearInterval(interval);
-
-        currentAudio.pause();
-        currentAudio.currentTime = 0;
-        currentAudio.src = "";
-
-        audioRef.current = nextAudio;
-        nextAudioRef.current = new Audio();
-
-        setQueueIndex(nextIndex);
-        setCurrentSong(next);
-        setIsPlaying(true);
-
-        addToHistory(next);
-      }
-    }, 100);
+    playSong(queue[nextIndex], queue, nextIndex);
   };
 
-  const nextSong = () => crossfadeToNext();
-
+  // =========================
+  // ⏮️ PREV
+  // =========================
   const prevSong = () => {
-    if (queueIndex > 0) {
-      playSong(queue[queueIndex - 1], queue, queueIndex - 1);
-    }
+    if (queue.length === 0) return;
+
+    const prevIndex =
+      queueIndex === 0 ? queue.length - 1 : queueIndex - 1;
+
+    playSong(queue[prevIndex], queue, prevIndex);
   };
 
+  // =========================
+  // ⏱️ SEEK
+  // =========================
   const seek = (time) => {
+    if (!audioRef.current) return;
     audioRef.current.currentTime = time;
     setCurrentTime(time);
   };
 
+  // =========================
+  // 🔊 VOLUMEN
+  // =========================
   const setVolume = (value) => {
+    if (!audioRef.current) return;
+
     const v = Math.max(0, Math.min(1, value));
     audioRef.current.volume = v;
-    nextAudioRef.current.volume = v;
     localStorage.setItem("volume", v);
   };
 
+  // =========================
+  // 🎧 EVENTOS AUDIO
+  // =========================
   useEffect(() => {
     const audio = audioRef.current;
-
-    const savedVolume = localStorage.getItem("volume");
-    if (savedVolume) {
-      const v = Number(savedVolume);
-      audio.volume = v;
-      nextAudioRef.current.volume = v;
-    }
+    if (!audio) return;
 
     const updateTime = () => {
-      setCurrentTime(audio.currentTime);
+      setCurrentTime(audio.currentTime || 0);
       setDuration(audio.duration || 0);
     };
 
-    const handleEnded = () => crossfadeToNext();
+    const handleEnded = () => nextSong();
     const handleWaiting = () => setIsBuffering(true);
     const handlePlaying = () => setIsBuffering(false);
 
@@ -206,6 +220,9 @@ export const PlayerProvider = ({ children }) => {
     };
   }, [queueIndex, queue, isShuffle]);
 
+  // =========================
+  // 🎯 PROVIDER
+  // =========================
   return (
     <PlayerContext.Provider
       value={{
@@ -216,6 +233,7 @@ export const PlayerProvider = ({ children }) => {
         currentTime,
         duration,
         isBuffering,
+
         playSong,
         togglePlay,
         nextSong,
@@ -223,9 +241,9 @@ export const PlayerProvider = ({ children }) => {
         seek,
         setVolume,
 
-        // 🔥 nuevos
         isShuffle,
         toggleShuffle,
+
         favorites,
         toggleFavorite,
         history,
@@ -236,4 +254,5 @@ export const PlayerProvider = ({ children }) => {
   );
 };
 
+// Hook limpio (OBLIGATORIO usar este)
 export const usePlayer = () => useContext(PlayerContext);
