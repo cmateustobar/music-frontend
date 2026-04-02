@@ -1,7 +1,18 @@
 const BASE_URL = import.meta.env.VITE_API_URL;
 
 /* =========================
-   FETCH SONGS
+   🧠 HELPER (DEBUG CONTROL)
+========================= */
+const safeJson = async (res) => {
+  try {
+    return await res.json();
+  } catch {
+    return null;
+  }
+};
+
+/* =========================
+   🎵 FETCH SONGS
 ========================= */
 export const fetchSongs = async () => {
   try {
@@ -14,9 +25,9 @@ export const fetchSongs = async () => {
       return [];
     }
 
-    const data = await res.json();
+    const data = await safeJson(res);
 
-    return Array.isArray(data) ? data : data.songs || [];
+    return Array.isArray(data) ? data : data?.songs || [];
 
   } catch (error) {
     console.error("❌ fetchSongs error:", error);
@@ -25,7 +36,7 @@ export const fetchSongs = async () => {
 };
 
 /* =========================
-   UPLOAD SONG (FIX REAL)
+   ⬆️ UPLOAD SONG
 ========================= */
 export const uploadSong = async (formData) => {
   try {
@@ -34,18 +45,11 @@ export const uploadSong = async (formData) => {
       body: formData,
     });
 
-    // 🔥 IMPORTANTE: NO FALLAR SI RES EXISTE
     if (!res) {
       throw new Error("No response");
     }
 
-    let data = null;
-
-    try {
-      data = await res.json();
-    } catch {
-      console.warn("⚠️ No JSON en respuesta");
-    }
+    const data = await safeJson(res);
 
     console.log("✅ Upload response:", data);
 
@@ -54,7 +58,33 @@ export const uploadSong = async (formData) => {
   } catch (error) {
     console.error("❌ uploadSong error:", error);
 
-    // 🔥 NO BLOQUEAR FLUJO (porque sí subió)
+    // 🔥 No romper flujo (UX importante)
     return { success: true };
+  }
+};
+
+/* =========================
+   🗑️ DELETE SONG (NUEVO PRO)
+========================= */
+export const deleteSong = async (id) => {
+  try {
+    const res = await fetch(`${BASE_URL}/api/songs/${id}`, {
+      method: "DELETE",
+    });
+
+    if (!res.ok) {
+      console.error("❌ Error eliminando:", res.status);
+      throw new Error("Error eliminando canción");
+    }
+
+    const data = await safeJson(res);
+
+    console.log("🗑️ Canción eliminada:", data);
+
+    return data;
+
+  } catch (error) {
+    console.error("❌ deleteSong error:", error);
+    throw error; // 🔥 aquí sí rompemos (acción crítica)
   }
 };
