@@ -5,7 +5,7 @@ export const PlayerContext = createContext();
 const BASE_URL = import.meta.env.VITE_API_URL || "";
 
 export const PlayerProvider = ({ children }) => {
-  const audioRef = useRef(null);
+  const audioRef = useRef(new Audio());
 
   const [currentSong, setCurrentSong] = useState(null);
   const [queue, setQueue] = useState([]);
@@ -15,26 +15,14 @@ export const PlayerProvider = ({ children }) => {
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [isBuffering, setIsBuffering] = useState(false);
-
   const [isShuffle, setIsShuffle] = useState(false);
-
-  const [favorites, setFavorites] = useState(() => {
-    const saved = localStorage.getItem("favorites");
-    return saved ? JSON.parse(saved) : [];
-  });
-
-  const [history, setHistory] = useState([]);
 
   // =========================
   // INIT AUDIO
   // =========================
   useEffect(() => {
-    const audio = new Audio();
+    const audio = audioRef.current;
     audio.preload = "auto";
-    audioRef.current = audio;
-
-    const savedVolume = localStorage.getItem("volume");
-    if (savedVolume) audio.volume = Number(savedVolume);
 
     const updateTime = () => {
       setCurrentTime(audio.currentTime || 0);
@@ -43,13 +31,18 @@ export const PlayerProvider = ({ children }) => {
 
     audio.addEventListener("timeupdate", updateTime);
     audio.addEventListener("loadedmetadata", updateTime);
-    audio.addEventListener("ended", () => nextSong());
+
     audio.addEventListener("playing", () => {
       setIsPlaying(true);
       setIsBuffering(false);
     });
+
     audio.addEventListener("pause", () => setIsPlaying(false));
     audio.addEventListener("waiting", () => setIsBuffering(true));
+
+    audio.addEventListener("ended", () => {
+      nextSong();
+    });
 
     return () => {
       audio.pause();
@@ -58,7 +51,7 @@ export const PlayerProvider = ({ children }) => {
   }, []);
 
   // =========================
-  // URL FIX (CRÍTICO)
+  // URL FIX
   // =========================
   const getFullUrl = (url) => {
     if (!url) return "";
@@ -66,77 +59,70 @@ export const PlayerProvider = ({ children }) => {
   };
 
   // =========================
-  // PRELOAD SIGUIENTE
-  // =========================
-  useEffect(() => {
-    if (!queue.length) return;
-
-    const next = queue[queueIndex + 1];
-    if (next?.audioUrl) {
-      const audio = new Audio();
-      audio.src = getFullUrl(next.audioUrl);
-      audio.preload = "auto";
-    }
-  }, [queueIndex]);
-
-  // =========================
-  // HISTORY
-  // =========================
-  const addToHistory = (song) => {
-    setHistory((prev) => {
-      const updated = [song, ...prev.filter((s) => s._id !== song._id)];
-      return updated.slice(0, 20);
-    });
-  };
-
-  // =========================
-  // PLAY
+  // PLAY SONG (FIX DEFINITIVO)
   // =========================
   const playSong = (song, list = [], index = 0) => {
-    if (!song || !audioRef.current) return;
+    if (!song) return;
 
     const audio = audioRef.current;
 
     const rawUrl = song.audioUrl || song.audio || song.url;
-    if (!rawUrl) return;
+    if (!rawUrl) {
+      console.error("No hay URL de audio en la canción");
+      return;
+    }
 
     const url = getFullUrl(rawUrl);
 
+    // 🔥 RESET LIMPIO
     audio.pause();
+    audio.src = "";
+    audio.load();
+
     audio.src = url;
     audio.currentTime = 0;
 
-    setCurrentSong(song);
     setQueue(list);
     setQueueIndex(index);
-
-    addToHistory(song);
+    setCurrentSong(song);
 
     audio.load();
 
-    audio
-      .play()
+    audio.play()
       .then(() => setIsPlaying(true))
-      .catch(() => setIsPlaying(false));
+      .catch((err) => {
+        console.error("Error al reproducir:", err);
+        setIsPlaying(false);
+      });
   };
 
+  // =========================
+  // CONTROLES
+  // =========================
   const togglePlay = () => {
     const audio = audioRef.current;
-    if (!audio || !audio.src) return;
+    if (!audio.src) return;
 
     if (audio.paused) {
-      audio.play();
+      audio.play().then(() => setIsPlaying(true));
     } else {
       audio.pause();
+      setIsPlaying(false);
     }
   };
 
   const nextSong = () => {
     if (!queue.length) return;
 
-    const nextIndex = isShuffle
-      ? Math.floor(Math.random() * queue.length)
-      : (queueIndex + 1) % queue.length;
+    let nextIndex;
+
+    if (isShuffle) {
+      do {
+        nextIndex = Math.floor(Math.random() * queue.length);
+      } while (nextIndex === queueIndex && queue.length > 1);
+    } else {
+      nextIndex = (queueIndex + 1) % queue.length;
+    }
 
     playSong(queue[nextIndex], queue, nextIndex);
   };
@@ -144,23 +130,25 @@ export const PlayerProvider = ({ children }) => {
   const prevSong = () => {
     if (!queue.length) return;
 
-    const prevIndex =
-      queueIndex === 0 ? queue.length - 1 : queueIndex - 1;
+    let prevIndex = queueIndex - 1;
+    if (prevIndex < 0) prevIndex = queue.length - 1;
 
     playSong(queue[prevIndex], queue, prevIndex);
   };
 
   const seek = (time) => {
-    if (!audioRef.current) return;
-    audioRef.current.currentTime = time;
+    const audio = audioRef.current;
+    if (!audio) return;
+    audio.currentTime = time;
     setCurrentTime(time);
   };
 
   const setVolume = (value) => {
-    if (!audioRef.current) return;
+    const audio = audioRef.current;
+    if (!audio) return;
 
     const v = Math.max(0, Math.min(1, value));
-    audioRef.current.volume = v;
+    audio.volume = v;
     localStorage.setItem("volume", v);
   };
 
@@ -168,8 +156,6 @@ export const PlayerProvider = ({ children }) => {
     <PlayerContext.Provider
       value={{
         currentSong,
-        queue,
-        queueIndex,
         isPlaying,
         currentTime,
         duration,
@@ -184,9 +170,6 @@ export const PlayerProvider = ({ children }) => {
 
         isShuffle,
         setIsShuffle,
-
-        favorites,
-        history,
       }}
     >
       {children}
