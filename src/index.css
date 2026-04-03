@@ -2,20 +2,53 @@
 @tailwind components;
 @tailwind utilities;
 
-/* 🎧 PROGRESS BAR PRO */
+/* 🎧 BASE GLOBAL */
+body {
+  background-color: #121212;
+  color: white;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+/* 🎧 SCROLL PRO */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #2a2a2a;
+  border-radius: 10px;
+}
+
+/* 🎧 INPUTS PRO */
+input {
+  background: #181818;
+  border: 1px solid #2a2a2a;
+  padding: 10px;
+  border-radius: 8px;
+  color: white;
+}
+
+input::placeholder {
+  color: #888;
+}
+
+/* 🎧 BOTONES */
+button {
+  transition: all 0.2s ease;
+}
+
+/* 🎧 RANGE */
 input[type="range"] {
   appearance: none;
   height: 4px;
   background: #4b5563;
   border-radius: 999px;
-  cursor: pointer;
 }
 
 input[type="range"]::-webkit-slider-thumb {
   appearance: none;
   height: 12px;
   width: 12px;
-  background: #22c55e;
+  background: #1DB954;
   border-radius: 50%;
-  cursor: pointer;
 }
