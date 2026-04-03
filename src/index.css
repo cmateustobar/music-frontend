@@ -1,3 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 /* 🎧 PROGRESS BAR PRO */
 input[type="range"] {
   appearance: none;
