@@ -26,7 +26,7 @@ export const PlayerProvider = ({ children }) => {
   const [history, setHistory] = useState([]);
 
   // =========================
-  // 🎧 INIT AUDIO
+  // INIT AUDIO
   // =========================
   useEffect(() => {
     const audio = new Audio();
@@ -58,7 +58,7 @@ export const PlayerProvider = ({ children }) => {
   }, []);
 
   // =========================
-  // 🔗 URL
+  // URL FIX (CRÍTICO)
   // =========================
   const getFullUrl = (url) => {
     if (!url) return "";
@@ -66,27 +66,42 @@ export const PlayerProvider = ({ children }) => {
   };
 
   // =========================
-  // ▶️ PLAY (FIX REAL)
+  // PRELOAD SIGUIENTE
+  // =========================
+  useEffect(() => {
+    if (!queue.length) return;
+
+    const next = queue[queueIndex + 1];
+    if (next?.audioUrl) {
+      const audio = new Audio();
+      audio.src = getFullUrl(next.audioUrl);
+      audio.preload = "auto";
+    }
+  }, [queueIndex]);
+
+  // =========================
+  // HISTORY
+  // =========================
+  const addToHistory = (song) => {
+    setHistory((prev) => {
+      const updated = [song, ...prev.filter((s) => s._id !== song._id)];
+      return updated.slice(0, 20);
+    });
+  };
+
+  // =========================
+  // PLAY
   // =========================
   const playSong = (song, list = [], index = 0) => {
     if (!song || !audioRef.current) return;
 
     const audio = audioRef.current;
 
-    console.log("🎧 Click canción:", song);
-
     const rawUrl = song.audioUrl || song.audio || song.url;
-
-    if (!rawUrl) {
-      console.error("❌ No hay URL de audio:", song);
-      return;
-    }
+    if (!rawUrl) return;
 
     const url = getFullUrl(rawUrl);
 
-    console.log("🔗 URL final:", url);
-
-    // 🔥 RESET TOTAL
     audio.pause();
     audio.src = url;
     audio.currentTime = 0;
@@ -97,32 +112,14 @@ export const PlayerProvider = ({ children }) => {
 
     addToHistory(song);
 
-    // 🔥 CLAVE PARA QUE FUNCIONE EN VERCEL
     audio.load();
 
     audio
       .play()
-      .then(() => {
-        console.log("✅ Reproduciendo OK");
-      })
-      .catch((err) => {
-        console.error("❌ Error play():", err);
-      });
+      .then(() => setIsPlaying(true))
+      .catch(() => setIsPlaying(false));
   };
 
-  // =========================
-  // 🕓 HISTORY
-  // =========================
-  const addToHistory = (song) => {
-    setHistory((prev) => {
-      const updated = [song, ...prev.filter((s) => s._id !== song._id)];
-      return updated.slice(0, 20);
-    });
-  };
-
-  // =========================
-  // ⏯️ TOGGLE
-  // =========================
   const togglePlay = () => {
     const audio = audioRef.current;
     if (!audio || !audio.src) return;
@@ -134,11 +131,8 @@ export const PlayerProvider = ({ children }) => {
     }
   };
 
-  // =========================
-  // ⏭️ NEXT
-  // =========================
   const nextSong = () => {
-    if (queue.length === 0) return;
+    if (!queue.length) return;
 
     const nextIndex = isShuffle
       ? Math.floor(Math.random() * queue.length)
@@ -147,11 +141,8 @@ export const PlayerProvider = ({ children }) => {
     playSong(queue[nextIndex], queue, nextIndex);
   };
 
-  // =========================
-  // ⏮️ PREV
-  // =========================
   const prevSong = () => {
-    if (queue.length === 0) return;
+    if (!queue.length) return;
 
     const prevIndex =
       queueIndex === 0 ? queue.length - 1 : queueIndex - 1;
@@ -159,19 +150,12 @@ export const PlayerProvider = ({ children }) => {
     playSong(queue[prevIndex], queue, prevIndex);
   };
 
-  // =========================
-  // ⏱️ SEEK
-  // =========================
   const seek = (time) => {
     if (!audioRef.current) return;
-
     audioRef.current.currentTime = time;
     setCurrentTime(time);
   };
 
-  // =========================
-  // 🔊 VOLUMEN
-  // =========================
   const setVolume = (value) => {
     if (!audioRef.current) return;
 

@@ -1,36 +1,17 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-/* Reset */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-/* Base */
-body {
-  background-color: #000;
-  color: #fff;
-  font-family: system-ui, sans-serif;
-}
-
-/* Scroll */
-::-webkit-scrollbar {
-  width: 6px;
-}
-::-webkit-scrollbar-thumb {
-  background: #333;
-  border-radius: 10px;
-}
-
-/* Slider PRO */
+/* 🎧 PROGRESS BAR PRO */
 input[type="range"] {
+  appearance: none;
   height: 4px;
+  background: #4b5563;
+  border-radius: 999px;
+  cursor: pointer;
 }
+
 input[type="range"]::-webkit-slider-thumb {
+  appearance: none;
   height: 12px;
   width: 12px;
+  background: #22c55e;
   border-radius: 50%;
+  cursor: pointer;
 }
