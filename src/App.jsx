@@ -8,7 +8,7 @@ function App() {
 
   const dynamicStyle = currentSong
     ? {
-        background: `linear-gradient(to bottom, #333, #121212)`,
+        background: `linear-gradient(to bottom, #2a2a2a, #121212)`,
       }
     : { background: "#121212" };
 
@@ -17,17 +17,20 @@ function App() {
 
       <div className="flex flex-1 overflow-hidden">
 
-        <aside className="w-64 bg-black/80 backdrop-blur-lg p-5">
+        {/* SIDEBAR */}
+        <aside className="w-64 bg-black/70 backdrop-blur-xl p-5 border-r border-[#2a2a2a]">
           <Sidebar />
         </aside>
 
+        {/* MAIN */}
         <main className="flex-1 overflow-y-auto p-6">
           <Home />
         </main>
 
       </div>
 
-      <div className="h-24 bg-black/80 backdrop-blur-lg px-6 flex items-center">
+      {/* PLAYER */}
+      <div className="h-24 bg-black/80 backdrop-blur-xl border-t border-[#2a2a2a] px-6 flex items-center">
         <Player />
       </div>
 
