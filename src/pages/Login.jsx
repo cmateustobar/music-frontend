@@ -1,30 +1,40 @@
 import { useState } from "react";
 
 function Login({ onClose }) {
+  const [isRegister, setIsRegister] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const handleLogin = async () => {
+  const endpoint = isRegister ? "register" : "login";
+
+  const handleSubmit = async () => {
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/login`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email, password }),
-      });
+      const res = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/auth/${endpoint}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password }),
+        }
+      );
 
       const data = await res.json();
+
+      if (isRegister) {
+        alert("Usuario creado, ahora inicia sesión");
+        setIsRegister(false);
+        return;
+      }
 
       if (data.token) {
         localStorage.setItem("token", data.token);
         window.location.reload();
       } else {
-        alert(data.error || "Error al iniciar sesión");
+        alert(data.error || "Error");
       }
 
-    } catch (error) {
-      console.error(error);
+    } catch (err) {
+      console.error(err);
       alert("Error de conexión");
     }
   };
@@ -34,33 +44,42 @@ function Login({ onClose }) {
 
       <div className="bg-[#181818] p-8 rounded-xl space-y-4 w-80">
 
-        <h2 className="text-2xl font-bold text-white">Iniciar sesión</h2>
+        <h2 className="text-2xl font-bold text-white">
+          {isRegister ? "Crear cuenta" : "Iniciar sesión"}
+        </h2>
 
         <input
           placeholder="Email"
-          value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="w-full p-2 bg-black text-white rounded outline-none"
+          className="w-full p-2 bg-black text-white rounded"
         />
 
         <input
           type="password"
           placeholder="Contraseña"
-          value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="w-full p-2 bg-black text-white rounded outline-none"
+          className="w-full p-2 bg-black text-white rounded"
         />
 
         <button
-          onClick={handleLogin}
-          className="w-full bg-green-500 text-black p-2 rounded font-semibold hover:scale-105 transition"
+          onClick={handleSubmit}
+          className="w-full bg-green-500 text-black p-2 rounded font-semibold"
         >
-          Entrar
+          {isRegister ? "Registrarse" : "Entrar"}
+        </button>
+
+        <button
+          onClick={() => setIsRegister(!isRegister)}
+          className="text-sm text-gray-400 w-full"
+        >
+          {isRegister
+            ? "¿Ya tienes cuenta? Inicia sesión"
+            : "¿No tienes cuenta? Regístrate"}
         </button>
 
         <button
           onClick={onClose}
-          className="w-full text-gray-400 text-sm"
+          className="text-xs text-gray-500 w-full"
         >
           Cancelar
         </button>
