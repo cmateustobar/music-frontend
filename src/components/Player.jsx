@@ -6,6 +6,7 @@ import {
   SkipBack,
   Shuffle,
   Volume2,
+  Heart,
 } from "lucide-react";
 
 function formatTime(time) {
@@ -23,16 +24,20 @@ function Player() {
     isPlaying,
     currentTime,
     duration,
-    isBuffering,
     togglePlay,
     nextSong,
     prevSong,
     seek,
     setVolume,
     isShuffle,
-    toggleShuffle,
+    setIsShuffle,
+    toggleFavorite,
+    isFavorite,
   } = usePlayer();
 
+  // =========================
+  // SIN CANCIÓN
+  // =========================
   if (!currentSong) {
     return (
       <div className="w-full flex items-center justify-center text-gray-400 text-sm">
@@ -44,8 +49,9 @@ function Player() {
   return (
     <div className="w-full flex items-center justify-between gap-4">
 
-      {/* 🎵 INFO */}
+      {/* 🎵 LEFT - INFO */}
       <div className="flex items-center gap-4 w-1/4 min-w-[200px]">
+
         <img
           src={currentSong.coverUrl}
           alt={currentSong.title}
@@ -64,46 +70,72 @@ function Player() {
             {currentSong.artist}
           </p>
         </div>
+
+        {/* ❤️ FAVORITO */}
+        <button
+          onClick={() => toggleFavorite(currentSong)}
+          className="ml-2"
+        >
+          <Heart
+            size={18}
+            className={`transition ${
+              isFavorite(currentSong)
+                ? "text-green-500 scale-110"
+                : "text-gray-400"
+            } hover:text-white`}
+          />
+        </button>
+
       </div>
 
-      {/* 🎧 CONTROLES */}
+      {/* 🎧 CENTER - CONTROLES */}
       <div className="flex flex-col items-center w-2/4 max-w-xl">
 
         <div className="flex items-center gap-6 mb-2">
 
+          {/* SHUFFLE */}
           <button
-            onClick={toggleShuffle}
+            onClick={() => setIsShuffle((prev) => !prev)}
             className={`transition ${
               isShuffle ? "text-green-500 scale-110" : "text-gray-400"
             } hover:text-white`}
+            title="Aleatorio"
           >
             <Shuffle size={18} />
           </button>
 
-          <button onClick={prevSong} className="hover:scale-110 transition">
+          {/* PREV */}
+          <button
+            onClick={prevSong}
+            className="text-gray-300 hover:text-white hover:scale-110 transition"
+            title="Anterior"
+          >
             <SkipBack size={22} />
           </button>
 
+          {/* PLAY / PAUSE */}
           <button
             onClick={togglePlay}
             className="bg-white text-black p-2 rounded-full hover:scale-110 transition"
+            title="Play / Pause"
           >
-            {isBuffering ? (
-              <div className="w-5 h-5 border-2 border-black border-t-transparent rounded-full animate-spin" />
-            ) : isPlaying ? (
-              <Pause size={20} />
-            ) : (
-              <Play size={20} />
-            )}
+            {isPlaying ? <Pause size={20} /> : <Play size={20} />}
           </button>
 
-          <button onClick={nextSong} className="hover:scale-110 transition">
+          {/* NEXT */}
+          <button
+            onClick={nextSong}
+            className="text-gray-300 hover:text-white hover:scale-110 transition"
+            title="Siguiente"
+          >
             <SkipForward size={22} />
           </button>
+
         </div>
 
-        {/* PROGRESS */}
+        {/* 🎚️ PROGRESS BAR */}
         <div className="flex items-center gap-3 w-full">
+
           <span className="text-xs text-gray-400 w-10 text-right">
             {formatTime(currentTime)}
           </span>
@@ -120,12 +152,16 @@ function Player() {
           <span className="text-xs text-gray-400 w-10">
             {formatTime(duration)}
           </span>
+
         </div>
+
       </div>
 
-      {/* 🔊 VOLUMEN */}
-      <div className="flex items-center gap-3 w-1/4 justify-end">
-        <Volume2 size={18} />
+      {/* 🔊 RIGHT - VOLUMEN */}
+      <div className="flex items-center gap-3 w-1/4 justify-end min-w-[150px]">
+
+        <Volume2 size={18} className="text-gray-400" />
+
         <input
           type="range"
           min={0}
@@ -135,7 +171,9 @@ function Player() {
           onChange={(e) => setVolume(Number(e.target.value))}
           className="w-24 accent-green-500"
         />
+
       </div>
+
     </div>
   );
 }

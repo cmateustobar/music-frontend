@@ -1,14 +1,23 @@
+import { usePlayer } from "./context/PlayerContext";
 import Sidebar from "./components/Sidebar";
 import Home from "./components/Home";
 import Player from "./components/Player";
 
 function App() {
+  const { currentSong } = usePlayer();
+
+  const dynamicStyle = currentSong
+    ? {
+        background: `linear-gradient(to bottom, #333, #121212)`,
+      }
+    : { background: "#121212" };
+
   return (
-    <div className="h-screen flex flex-col dynamic-bg text-white">
+    <div className="h-screen flex flex-col text-white" style={dynamicStyle}>
 
       <div className="flex flex-1 overflow-hidden">
 
-        <aside className="w-64 bg-black/80 backdrop-blur-lg p-5 border-r border-[#2a2a2a]">
+        <aside className="w-64 bg-black/80 backdrop-blur-lg p-5">
           <Sidebar />
         </aside>
 
@@ -18,7 +27,7 @@ function App() {
 
       </div>
 
-      <div className="h-24 bg-[#181818]/90 backdrop-blur-lg border-t border-[#2a2a2a] px-6 flex items-center">
+      <div className="h-24 bg-black/80 backdrop-blur-lg px-6 flex items-center">
         <Player />
       </div>
 
