@@ -1,140 +1,88 @@
 import { useEffect, useState } from "react";
-import { fetchSongs, uploadSong } from "../services/api";
-import SongList from "./SongList";
+import { fetchSongs } from "../services/api";
+import { usePlayer } from "../context/PlayerContext";
 
 function Home() {
   const [songs, setSongs] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  const loadSongs = async () => {
-    try {
-      setLoading(true);
-      const data = await fetchSongs();
-
-      console.log("🎵 canciones recibidas:", data);
-
-      if (Array.isArray(data)) {
-        setSongs(data);
-      } else {
-        setSongs([]);
-      }
-
-    } catch (error) {
-      console.error("❌ Error cargando canciones:", error);
-      setSongs([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { playSong } = usePlayer();
 
   useEffect(() => {
-    loadSongs();
+    const load = async () => {
+      const data = await fetchSongs();
+      setSongs(data);
+    };
+    load();
   }, []);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    const formData = new FormData();
-    formData.append("title", e.target.title.value);
-    formData.append("artist", e.target.artist.value);
-    formData.append("audio", e.target.audio.files[0]);
-    formData.append("image", e.target.image.files[0]);
-
-    try {
-      await uploadSong(formData);
-
-      alert("Canción subida 🚀");
-
-      e.target.reset();
-
-      await loadSongs();
-
-    } catch (error) {
-      console.error("❌ Error al subir canción:", error);
-      alert("Error al subir canción ❌");
-    }
-  };
-
   return (
-    <div className="flex-1 overflow-y-auto pb-32">
-      <div className="max-w-[1400px] mx-auto px-6 space-y-10">
+    <div className="space-y-8">
 
-        {/* HEADER */}
-        <div>
-          <h1 className="text-3xl font-bold text-white">
-            Inicio
-          </h1>
-          <p className="text-gray-400 text-sm mt-1">
-            Tus canciones recientes
-          </p>
+      {/* 🔥 HERO / NOVEDADES */}
+      <section>
+        <h1 className="text-4xl font-bold mb-6">Novedades</h1>
+
+        <div className="grid grid-cols-2 gap-6">
+
+          {/* CARD GRANDE 1 */}
+          <div className="bg-[#1a1a1a] rounded-2xl overflow-hidden hover:scale-[1.02] transition cursor-pointer">
+            <img
+              src={songs[0]?.coverUrl}
+              className="w-full h-64 object-cover"
+            />
+            <div className="p-4">
+              <p className="text-sm text-gray-400">EN TENDENCIA</p>
+              <h2 className="text-xl font-semibold">
+                {songs[0]?.title}
+              </h2>
+            </div>
+          </div>
+
+          {/* CARD GRANDE 2 */}
+          <div className="bg-gradient-to-br from-pink-500 to-purple-600 rounded-2xl p-6 flex flex-col justify-between">
+            <h2 className="text-2xl font-bold">
+              Álbumes Imprescindibles
+            </h2>
+            <p className="text-lg">Top del momento</p>
+          </div>
+
         </div>
+      </section>
 
-        {/* LISTA */}
-        {loading ? (
-          <p className="text-gray-500">Cargando...</p>
-        ) : songs.length > 0 ? (
-          <SongList 
-            songs={songs} 
-            onDelete={loadSongs}   // 🔥 CLAVE (ACTUALIZA LISTA)
-          />
-        ) : (
-          <p className="text-gray-500 text-sm">
-            No hay canciones disponibles
-          </p>
-        )}
+      {/* 🎵 NUEVAS CANCIONES */}
+      <section>
+        <h2 className="text-2xl font-semibold mb-4">
+          Canciones nuevas
+        </h2>
 
-        {/* FORMULARIO */}
-        <div className="bg-[#181818] p-6 rounded-2xl shadow-lg max-w-lg">
+        <div className="grid grid-cols-6 gap-4">
 
-          <h2 className="text-lg font-semibold text-white mb-4">
-            Subir canción
-          </h2>
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-
-            <input
-              name="title"
-              type="text"
-              placeholder="Título"
-              required
-              className="w-full p-3 rounded-lg bg-[#282828] text-white outline-none focus:ring-2 focus:ring-green-500"
-            />
-
-            <input
-              name="artist"
-              type="text"
-              placeholder="Artista"
-              required
-              className="w-full p-3 rounded-lg bg-[#282828] text-white outline-none focus:ring-2 focus:ring-green-500"
-            />
-
-            <input
-              name="audio"
-              type="file"
-              accept="audio/*"
-              required
-              className="w-full text-sm text-gray-300"
-            />
-
-            <input
-              name="image"
-              type="file"
-              accept="image/*"
-              required
-              className="w-full text-sm text-gray-300"
-            />
-
-            <button
-              type="submit"
-              className="w-full bg-green-500 py-2 rounded-full font-semibold text-black hover:bg-green-400 transition"
+          {songs.map((song, index) => (
+            <div
+              key={song._id}
+              onClick={() => playSong(song, songs, index)}
+              className="
+                bg-[#181818] p-3 rounded-xl
+                hover:bg-[#282828]
+                transition cursor-pointer
+              "
             >
-              Subir canción
-            </button>
+              <img
+                src={song.coverUrl}
+                className="w-full aspect-square object-cover rounded-md mb-2"
+              />
 
-          </form>
+              <p className="text-sm font-semibold truncate">
+                {song.title}
+              </p>
+              <p className="text-xs text-gray-400 truncate">
+                {song.artist}
+              </p>
+            </div>
+          ))}
+
         </div>
+      </section>
 
-      </div>
     </div>
   );
 }
