@@ -33,9 +33,6 @@ function Player() {
     toggleShuffle,
   } = usePlayer();
 
-  // =========================
-  // SIN CANCIÓN
-  // =========================
   if (!currentSong) {
     return (
       <div className="w-full flex items-center justify-center text-gray-400 text-sm">
@@ -47,12 +44,16 @@ function Player() {
   return (
     <div className="w-full flex items-center justify-between gap-4">
 
-      {/* 🎵 LEFT - INFO */}
+      {/* 🎵 INFO */}
       <div className="flex items-center gap-4 w-1/4 min-w-[200px]">
         <img
           src={currentSong.coverUrl}
           alt={currentSong.title}
-          className="w-14 h-14 object-cover rounded-md shadow"
+          className={`
+            w-14 h-14 object-cover rounded-md shadow-lg
+            transition-transform duration-700
+            ${isPlaying ? "animate-spin-slow" : ""}
+          `}
         />
 
         <div className="truncate">
@@ -65,40 +66,27 @@ function Player() {
         </div>
       </div>
 
-      {/* 🎧 CENTER - CONTROLES */}
+      {/* 🎧 CONTROLES */}
       <div className="flex flex-col items-center w-2/4 max-w-xl">
 
-        {/* BOTONES */}
         <div className="flex items-center gap-6 mb-2">
 
-          {/* SHUFFLE */}
           <button
             onClick={toggleShuffle}
             className={`transition ${
-              isShuffle ? "text-green-500" : "text-gray-400"
+              isShuffle ? "text-green-500 scale-110" : "text-gray-400"
             } hover:text-white`}
-            title="Aleatorio"
           >
             <Shuffle size={18} />
           </button>
 
-          {/* PREV */}
-          <button
-            onClick={prevSong}
-            className="text-gray-300 hover:text-white"
-            title="Anterior"
-          >
+          <button onClick={prevSong} className="hover:scale-110 transition">
             <SkipBack size={22} />
           </button>
 
-          {/* PLAY / PAUSE */}
           <button
             onClick={togglePlay}
-            className="
-              bg-white text-black p-2 rounded-full 
-              hover:scale-110 transition
-            "
-            title="Play / Pause"
+            className="bg-white text-black p-2 rounded-full hover:scale-110 transition"
           >
             {isBuffering ? (
               <div className="w-5 h-5 border-2 border-black border-t-transparent rounded-full animate-spin" />
@@ -109,19 +97,13 @@ function Player() {
             )}
           </button>
 
-          {/* NEXT */}
-          <button
-            onClick={nextSong}
-            className="text-gray-300 hover:text-white"
-            title="Siguiente"
-          >
+          <button onClick={nextSong} className="hover:scale-110 transition">
             <SkipForward size={22} />
           </button>
         </div>
 
-        {/* PROGRESS BAR */}
+        {/* PROGRESS */}
         <div className="flex items-center gap-3 w-full">
-
           <span className="text-xs text-gray-400 w-10 text-right">
             {formatTime(currentTime)}
           </span>
@@ -141,11 +123,9 @@ function Player() {
         </div>
       </div>
 
-      {/* 🔊 RIGHT - VOLUMEN */}
-      <div className="flex items-center gap-3 w-1/4 justify-end min-w-[150px]">
-
-        <Volume2 size={18} className="text-gray-400" />
-
+      {/* 🔊 VOLUMEN */}
+      <div className="flex items-center gap-3 w-1/4 justify-end">
+        <Volume2 size={18} />
         <input
           type="range"
           min={0}

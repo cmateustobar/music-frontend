@@ -4,21 +4,21 @@ import Player from "./components/Player";
 
 function App() {
   return (
-    <div className="h-screen flex flex-col bg-black text-white overflow-hidden">
+    <div className="h-screen flex flex-col dynamic-bg text-white">
 
       <div className="flex flex-1 overflow-hidden">
 
-        <div className="w-60 border-r border-[#282828] flex-shrink-0">
+        <aside className="w-64 bg-black/80 backdrop-blur-lg p-5 border-r border-[#2a2a2a]">
           <Sidebar />
-        </div>
+        </aside>
 
-        <div className="flex-1 overflow-y-auto">
+        <main className="flex-1 overflow-y-auto p-6">
           <Home />
-        </div>
+        </main>
 
       </div>
 
-      <div className="h-24 border-t border-[#282828] flex-shrink-0">
+      <div className="h-24 bg-[#181818]/90 backdrop-blur-lg border-t border-[#2a2a2a] px-6 flex items-center">
         <Player />
       </div>
 
