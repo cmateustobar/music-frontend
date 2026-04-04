@@ -1,40 +1,37 @@
-import { usePlayer } from "./context/PlayerContext";
+import { useState } from "react";
 import Sidebar from "./components/Sidebar";
 import Home from "./components/Home";
 import Player from "./components/Player";
+import Login from "./pages/Login";
 
 function App() {
-  const { currentSong } = usePlayer();
-
-  const dynamicStyle = currentSong
-    ? {
-        background: `linear-gradient(to bottom, #2a2a2a, #121212)`,
-      }
-    : { background: "#121212" };
+  const [showLogin, setShowLogin] = useState(false);
+  const token = localStorage.getItem("token");
 
   return (
-    <div className="h-screen flex flex-col text-white" style={dynamicStyle}>
+    <>
+      {showLogin && <Login onClose={() => setShowLogin(false)} />}
 
-      <div className="flex flex-1 overflow-hidden">
+      <div className="h-screen flex flex-col bg-[#121212] text-white">
 
-        {/* SIDEBAR */}
-        <aside className="w-64 bg-black/70 backdrop-blur-xl p-5 border-r border-[#2a2a2a]">
-          <Sidebar />
-        </aside>
+        <div className="flex flex-1 overflow-hidden">
 
-        {/* MAIN */}
-        <main className="flex-1 overflow-y-auto p-6">
-          <Home />
-        </main>
+          <aside className="w-64 bg-black/70 p-5 border-r border-[#2a2a2a]">
+            <Sidebar setShowLogin={setShowLogin} />
+          </aside>
+
+          <main className="flex-1 p-6 overflow-y-auto">
+            <Home />
+          </main>
+
+        </div>
+
+        <div className="h-24 bg-black p-4">
+          <Player />
+        </div>
 
       </div>
-
-      {/* PLAYER */}
-      <div className="h-24 bg-black/80 backdrop-blur-xl border-t border-[#2a2a2a] px-6 flex items-center">
-        <Player />
-      </div>
-
-    </div>
+    </>
   );
 }
 
