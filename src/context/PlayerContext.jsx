@@ -202,7 +202,7 @@ export const PlayerProvider = ({ children }) => {
       if (!list.length) return -1;
 
       if (shuffleEnabled) {
-        if (list.length === 1) return 0;
+        if (list.length === 1) return allowWrap ? 0 : -1;
 
         let randomIndex = Math.floor(Math.random() * list.length);
         while (randomIndex === index) {
@@ -570,7 +570,10 @@ export const PlayerProvider = ({ children }) => {
   useEffect(() => {
     if (currentSong) {
       localStorage.setItem("currentSong", JSON.stringify(currentSong));
+      return;
     }
+
+    localStorage.removeItem("currentSong");
   }, [currentSong]);
 
   useEffect(() => {
@@ -634,7 +637,7 @@ export const PlayerProvider = ({ children }) => {
         setDuration(progressSnapshotRef.current.duration);
       });
 
-      playNextFromRefs({ crossfade: true, allowWrap: false });
+      closePlayer();
     };
 
     const handlePreloadReady = (event) => {
@@ -697,8 +700,8 @@ export const PlayerProvider = ({ children }) => {
       });
     };
   }, [
+    closePlayer,
     getInactiveAudio,
-    playNextFromRefs,
     scheduleProgressSync,
     setAudioVolume,
     syncPlaybackFlags,

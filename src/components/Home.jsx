@@ -92,7 +92,12 @@ function LibraryShelf({ title, caption, songs, onPlay }) {
   );
 }
 
-function Home({ searchTerm = "", songsVersion = 0, onOpenUpload }) {
+function Home({
+  searchTerm = "",
+  songsVersion = 0,
+  onOpenUpload,
+  isAuthenticated = false,
+}) {
   const [songs, setSongs] = useState([]);
   const { playSong, favorites } = usePlayer();
 
@@ -346,18 +351,20 @@ function Home({ searchTerm = "", songsVersion = 0, onOpenUpload }) {
                   <div>
                     <p className="type-kicker text-cyan-100/52">Crear</p>
                     <h3 className="mt-1 font-display text-[1.22rem] leading-none tracking-[-0.05em] text-white">
-                      Publica nueva musica
+                      {isAuthenticated ? "Publica nueva musica" : "Inicia sesion para publicar"}
                     </h3>
                   </div>
                 </div>
                 <p className="mt-4 text-sm leading-6 text-slate-300/52">
-                  Mantiene la creacion disponible, pero fuera del flujo principal de escucha.
+                  {isAuthenticated
+                    ? "Mantiene la creacion disponible, pero fuera del flujo principal de escucha."
+                    : "La publicacion queda reservada para usuarios autenticados con una sesion activa."}
                 </p>
                 <button
                   onClick={onOpenUpload}
                   className="btn-primary state-hover-lift mt-5 flex w-full items-center justify-center gap-2 rounded-[18px] px-4 py-3 font-medium"
                 >
-                  <UploadCloud size={16} /> Abrir estudio
+                  <UploadCloud size={16} /> {isAuthenticated ? "Abrir estudio" : "Entrar para subir"}
                 </button>
               </div>
 

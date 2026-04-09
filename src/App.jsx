@@ -22,6 +22,7 @@ function App() {
   const [activeSection, setActiveSection] = useState("home");
   const [searchTerm, setSearchTerm] = useState("");
   const { currentSong } = usePlayer();
+  const isAuthenticated = Boolean(localStorage.getItem("token"));
 
   useEffect(() => {
     const nextCover = currentSong?.coverUrl;
@@ -100,6 +101,14 @@ function App() {
   };
 
   const navSection = showUpload ? "upload" : activeSection;
+  const handleOpenUpload = () => {
+    if (!isAuthenticated) {
+      setShowLogin(true);
+      return;
+    }
+
+    setShowUpload(true);
+  };
 
   return (
     <>
@@ -143,7 +152,7 @@ function App() {
               compact
               activeSection={navSection}
               onNavigate={handleNavigate}
-              onOpenUpload={() => setShowUpload(true)}
+              onOpenUpload={handleOpenUpload}
             />
           </div>
 
@@ -153,7 +162,7 @@ function App() {
                 setShowLogin={setShowLogin}
                 activeSection={navSection}
                 onNavigate={handleNavigate}
-                onOpenUpload={() => setShowUpload(true)}
+                onOpenUpload={handleOpenUpload}
               />
             </aside>
 
@@ -210,7 +219,7 @@ function App() {
                           whileTap={{ scale: 0.98 }}
                           onClick={() =>
                             tab.id === "upload"
-                              ? setShowUpload(true)
+                              ? handleOpenUpload()
                               : handleNavigate(tab.id)
                           }
                           className={`state-hover-lift rounded-full px-4 py-2 text-sm font-medium transition sm:px-4.5 ${
@@ -229,7 +238,8 @@ function App() {
                 <Home
                   searchTerm={searchTerm}
                   songsVersion={songsVersion}
-                  onOpenUpload={() => setShowUpload(true)}
+                  onOpenUpload={handleOpenUpload}
+                  isAuthenticated={isAuthenticated}
                 />
               </div>
             </main>
