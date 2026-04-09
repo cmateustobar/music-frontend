@@ -7,6 +7,7 @@ import {
   LogIn,
   LogOut,
   Sparkles,
+  UserRound,
 } from "lucide-react";
 
 const navItems = [
@@ -24,6 +25,19 @@ const reveal = {
   },
 };
 
+const decodeTokenPayload = (token) => {
+  try {
+    const [, payload] = token.split(".");
+    if (!payload) return null;
+
+    const normalized = payload.replace(/-/g, "+").replace(/_/g, "/");
+    const decoded = atob(normalized);
+    return JSON.parse(decoded);
+  } catch {
+    return null;
+  }
+};
+
 function Sidebar({
   setShowLogin,
   compact = false,
@@ -32,6 +46,9 @@ function Sidebar({
   onOpenUpload,
 }) {
   const token = localStorage.getItem("token");
+  const user = token ? decodeTokenPayload(token) : null;
+  const userEmail = user?.email || "Sesion activa";
+  const userInitial = (userEmail?.[0] || "U").toUpperCase();
 
   const logout = () => {
     localStorage.removeItem("token");
@@ -67,12 +84,9 @@ function Sidebar({
               Entrar
             </button>
           ) : (
-            <button
-              onClick={logout}
-              className="btn-secondary state-hover-lift rounded-full px-4 py-2 text-sm font-medium"
-            >
-              Salir
-            </button>
+            <div className="flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-white/[0.06] text-white">
+              {userInitial}
+            </div>
           )}
         </div>
 
@@ -119,9 +133,30 @@ function Sidebar({
         </div>
 
         <p className="mt-4 text-sm leading-6 text-slate-300/58">
-          Un acceso limpio a tu biblioteca, exploración y creación.
+          Un acceso limpio a tu biblioteca, exploracion y creacion.
         </p>
       </div>
+
+      {token ? (
+        <div className="mt-4 rounded-[24px] border border-white/8 bg-white/[0.04] p-4">
+          <div className="flex items-center gap-3">
+            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-cyan-300/90 to-violet-300/90 text-slate-950">
+              {userInitial}
+            </div>
+            <div className="min-w-0">
+              <p className="type-kicker text-slate-300/34">Perfil</p>
+              <p className="mt-1 truncate text-sm font-medium text-white">{userEmail}</p>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <button
+          onClick={() => setShowLogin(true)}
+          className="btn-secondary state-hover-lift mt-4 flex items-center justify-center gap-2 rounded-[22px] px-4 py-3 text-sm font-medium"
+        >
+          <UserRound size={16} /> Acceder a tu perfil
+        </button>
+      )}
 
       <nav className="mt-6 flex flex-col gap-2.5">
         {navItems.map(({ icon: Icon, label, id }) => (
@@ -145,12 +180,12 @@ function Sidebar({
       <div className="mt-6 rounded-[26px] border border-white/8 bg-[linear-gradient(160deg,rgba(255,255,255,0.07),rgba(255,255,255,0.02))] p-5">
         <div className="flex items-center gap-2 text-cyan-100">
           <Sparkles size={16} />
-          <p className="type-kicker text-cyan-100/60">Curaduría</p>
+          <p className="type-kicker text-cyan-100/60">Curaduria</p>
         </div>
         <p className="mt-3 font-display text-[1.25rem] leading-tight tracking-[-0.04em] text-white">
           Menos interfaz.
           <br />
-          Más música.
+          Mas musica.
         </p>
       </div>
 
@@ -167,7 +202,7 @@ function Sidebar({
             onClick={logout}
             className="btn-secondary state-hover-lift flex w-full items-center justify-center gap-2 rounded-[22px] px-4 py-3.5 font-medium"
           >
-            <LogOut size={18} /> Cerrar sesión
+            <LogOut size={18} /> Cerrar sesion
           </button>
         )}
       </div>

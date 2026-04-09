@@ -33,6 +33,7 @@ function Player() {
     duration,
     volume,
     togglePlay,
+    playSong,
     nextSong,
     prevSong,
     seek,
@@ -62,8 +63,8 @@ function Player() {
     if (!queue?.length) return [];
 
     return queue
-      .slice(queueIndex + 1)
-      .filter((song) => song?._id !== currentSong?._id)
+      .map((song, index) => ({ song, index }))
+      .filter(({ song, index }) => index > queueIndex && song?._id !== currentSong?._id)
       .slice(0, 5);
   }, [currentSong?._id, queue, queueIndex]);
 
@@ -71,6 +72,18 @@ function Player() {
     () => favorites.filter((song) => song._id !== currentSong?._id).slice(0, 4),
     [currentSong?._id, favorites]
   );
+
+  const handlePlayQueuedSong = (song, index) => {
+    playSong(song, queue, index, { crossfade: true });
+  };
+
+  const handlePlayFavoriteSuggestion = (song) => {
+    const fallbackQueue = favorites.length ? favorites : queue;
+    const songIndex = fallbackQueue.findIndex((item) => item._id === song._id);
+    playSong(song, fallbackQueue, songIndex < 0 ? 0 : songIndex, {
+      crossfade: true,
+    });
+  };
 
   if (!currentSong) {
     return null;
@@ -136,10 +149,11 @@ function Player() {
                     <p className="type-kicker text-slate-300/36">Up next</p>
                     <div className="mt-4 space-y-2.5">
                       {upNextSongs.length ? (
-                        upNextSongs.map((song, index) => (
-                          <div
+                        upNextSongs.map(({ song, index }, order) => (
+                          <button
                             key={song._id}
-                            className="flex items-center gap-3 rounded-[18px] border border-white/7 bg-white/[0.04] p-2.5"
+                            onClick={() => handlePlayQueuedSong(song, index)}
+                            className="state-hover-lift flex w-full items-center gap-3 rounded-[18px] border border-white/7 bg-white/[0.04] p-2.5 text-left hover:border-white/12 hover:bg-white/[0.08]"
                           >
                             <img
                               src={song.coverUrl}
@@ -155,9 +169,9 @@ function Player() {
                               </p>
                             </div>
                             <div className="text-[10px] uppercase tracking-[0.18em] text-slate-400/44">
-                              0{index + 1}
+                              0{order + 1}
                             </div>
-                          </div>
+                          </button>
                         ))
                       ) : (
                         <div className="rounded-[18px] border border-white/7 bg-white/[0.03] px-4 py-4 text-sm text-slate-300/56">
@@ -172,9 +186,10 @@ function Player() {
                     <div className="mt-4 space-y-2.5">
                       {favoriteSuggestions.length ? (
                         favoriteSuggestions.map((song) => (
-                          <div
+                          <button
                             key={song._id}
-                            className="flex items-center gap-3 rounded-[18px] border border-white/7 bg-white/[0.04] p-2.5"
+                            onClick={() => handlePlayFavoriteSuggestion(song)}
+                            className="state-hover-lift flex w-full items-center gap-3 rounded-[18px] border border-white/7 bg-white/[0.04] p-2.5 text-left hover:border-white/12 hover:bg-white/[0.08]"
                           >
                             <img
                               src={song.coverUrl}
@@ -189,7 +204,7 @@ function Player() {
                                 {song.artist}
                               </p>
                             </div>
-                          </div>
+                          </button>
                         ))
                       ) : (
                         <div className="rounded-[18px] border border-white/7 bg-white/[0.03] px-4 py-4 text-sm text-slate-300/56">
