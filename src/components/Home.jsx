@@ -407,7 +407,18 @@ function Home({
               variants={fadeUp}
               className="surface-glass panel-edge min-w-0 rounded-[30px] p-5 sm:p-6"
             >
-              <SongList songs={librarySongs} onDelete={loadSongs} />
+              {librarySongs.length ? (
+                <SongList songs={librarySongs} onDelete={loadSongs} />
+              ) : (
+                <div className="rounded-[24px] border border-white/7 bg-white/[0.03] px-5 py-10 text-center">
+                  <p className="font-display text-[1.3rem] tracking-[-0.05em] text-white">
+                    Nada por mostrar aqui todavia.
+                  </p>
+                  <p className="mt-3 text-sm leading-6 text-slate-300/56">
+                    Cambia el filtro, ajusta la busqueda o empieza a construir tu coleccion.
+                  </p>
+                </div>
+              )}
             </motion.div>
 
             <motion.aside variants={fadeUp} className="space-y-4">

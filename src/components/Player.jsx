@@ -2,6 +2,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useMemo, useState } from "react";
 import { usePlayer } from "../context/PlayerContext";
 import {
+  Trash2,
   Heart,
   ListMusic,
   Pause,
@@ -36,6 +37,8 @@ function Player() {
     playSong,
     nextSong,
     prevSong,
+    removeFromQueue,
+    clearQueue,
     seek,
     setVolume,
     isShuffle,
@@ -146,15 +149,28 @@ function Player() {
 
                 <div className="space-y-4">
                   <div className="surface-glass rounded-[24px] p-5">
-                    <p className="type-kicker text-slate-300/36">Up next</p>
+                    <div className="flex items-end justify-between gap-3">
+                      <p className="type-kicker text-slate-300/36">Up next</p>
+                      {!!upNextSongs.length && (
+                        <button
+                          onClick={clearQueue}
+                          className="text-xs text-slate-300/52 transition hover:text-white"
+                        >
+                          Limpiar cola
+                        </button>
+                      )}
+                    </div>
                     <div className="mt-4 space-y-2.5">
                       {upNextSongs.length ? (
                         upNextSongs.map(({ song, index }, order) => (
-                          <button
+                          <div
                             key={song._id}
-                            onClick={() => handlePlayQueuedSong(song, index)}
-                            className="state-hover-lift flex w-full items-center gap-3 rounded-[18px] border border-white/7 bg-white/[0.04] p-2.5 text-left hover:border-white/12 hover:bg-white/[0.08]"
+                            className="flex items-center gap-2 rounded-[18px] border border-white/7 bg-white/[0.04] p-2.5"
                           >
+                            <button
+                              onClick={() => handlePlayQueuedSong(song, index)}
+                              className="state-hover-lift flex min-w-0 flex-1 items-center gap-3 text-left"
+                            >
                             <img
                               src={song.coverUrl}
                               alt={song.title}
@@ -171,7 +187,15 @@ function Player() {
                             <div className="text-[10px] uppercase tracking-[0.18em] text-slate-400/44">
                               0{order + 1}
                             </div>
-                          </button>
+                            </button>
+                            <button
+                              onClick={() => removeFromQueue(song._id)}
+                              className="btn-icon state-hover-lift flex h-9 w-9 items-center justify-center rounded-full text-slate-300"
+                              title="Quitar de cola"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
                         ))
                       ) : (
                         <div className="rounded-[18px] border border-white/7 bg-white/[0.03] px-4 py-4 text-sm text-slate-300/56">

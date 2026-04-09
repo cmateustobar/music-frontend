@@ -483,6 +483,45 @@ export const PlayerProvider = ({ children }) => {
     playNextFromRefs({ crossfade: true, allowWrap: true });
   }, [playNextFromRefs]);
 
+  const removeFromQueue = useCallback(
+    (songId) => {
+      const currentQueue = queueRef.current;
+      if (!currentQueue.length) return;
+
+      const removeIndex = currentQueue.findIndex((song) => song._id === songId);
+      if (removeIndex < 0) return;
+
+      if (currentSongRef.current?._id === songId) {
+        const nextQueue = currentQueue.filter((song) => song._id !== songId);
+        if (!nextQueue.length) {
+          closePlayer();
+          return;
+        }
+
+        const fallbackIndex = Math.min(removeIndex, nextQueue.length - 1);
+        syncQueueState(nextQueue, fallbackIndex);
+        playSong(nextQueue[fallbackIndex], nextQueue, fallbackIndex, {
+          crossfade: true,
+        });
+        return;
+      }
+
+      const nextQueue = currentQueue.filter((song) => song._id !== songId);
+      const nextIndex =
+        removeIndex < queueIndexRef.current
+          ? Math.max(queueIndexRef.current - 1, 0)
+          : queueIndexRef.current;
+
+      syncQueueState(nextQueue, nextIndex);
+      primeNextSong(nextQueue, nextIndex);
+    },
+    [closePlayer, playSong, primeNextSong, syncQueueState]
+  );
+
+  const clearQueue = useCallback(() => {
+    closePlayer();
+  }, [closePlayer]);
+
   const togglePlay = useCallback(async () => {
     const audio = activeAudioRef.current;
     if (!audio?.src) return;
@@ -724,6 +763,8 @@ export const PlayerProvider = ({ children }) => {
       togglePlay,
       nextSong,
       prevSong,
+      removeFromQueue,
+      clearQueue,
       seek,
       setVolume,
       setIsShuffle,
@@ -745,6 +786,8 @@ export const PlayerProvider = ({ children }) => {
       togglePlay,
       nextSong,
       prevSong,
+      removeFromQueue,
+      clearQueue,
       seek,
       setVolume,
       closePlayer,
