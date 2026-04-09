@@ -1,9 +1,12 @@
 import { memo } from "react";
 import { motion } from "framer-motion";
 import { Play, Trash2 } from "lucide-react";
+import { usePlayer } from "../context/PlayerContext";
 
 const SongCard = memo(({ song, onPlay, onDelete, deleting }) => {
   const canDelete = typeof onDelete === "function";
+  const { currentSong, isPlaying } = usePlayer();
+  const isActive = currentSong?._id === song._id;
 
   return (
     <motion.article
@@ -16,7 +19,11 @@ const SongCard = memo(({ song, onPlay, onDelete, deleting }) => {
       }}
       whileHover={{ y: -7, scale: 1.014 }}
       transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-      className="group relative overflow-hidden rounded-[24px] border border-white/7 bg-white/[0.035] state-active-press"
+      className={`group relative overflow-hidden rounded-[24px] border state-active-press ${
+        isActive
+          ? "glow-active-soft border-cyan-300/20 bg-cyan-300/[0.07]"
+          : "border-white/7 bg-white/[0.035]"
+      }`}
     >
       <div className="relative overflow-hidden rounded-[22px]">
         <motion.img
@@ -54,8 +61,14 @@ const SongCard = memo(({ song, onPlay, onDelete, deleting }) => {
           </div>
         </div>
 
-        <div className="pointer-events-none absolute left-3 top-3 rounded-full border border-white/12 bg-slate-950/32 px-2 py-1 text-[10px] uppercase tracking-[0.18em] text-cyan-100/74 backdrop-blur-xl">
-          Play
+        <div
+          className={`pointer-events-none absolute left-3 top-3 rounded-full border px-2 py-1 text-[10px] uppercase tracking-[0.18em] backdrop-blur-xl ${
+            isActive
+              ? "border-cyan-300/20 bg-cyan-300/12 text-cyan-100"
+              : "border-white/12 bg-slate-950/32 text-cyan-100/74"
+          }`}
+        >
+          {isActive ? (isPlaying ? "Playing" : "Paused") : "Play"}
         </div>
 
         {canDelete && (

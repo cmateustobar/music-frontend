@@ -637,7 +637,7 @@ export const PlayerProvider = ({ children }) => {
         setDuration(progressSnapshotRef.current.duration);
       });
 
-      closePlayer();
+      playNextFromRefs({ crossfade: true, allowWrap: false });
     };
 
     const handlePreloadReady = (event) => {
@@ -700,8 +700,8 @@ export const PlayerProvider = ({ children }) => {
       });
     };
   }, [
-    closePlayer,
     getInactiveAudio,
+    playNextFromRefs,
     scheduleProgressSync,
     setAudioVolume,
     syncPlaybackFlags,
