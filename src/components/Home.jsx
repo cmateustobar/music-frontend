@@ -274,7 +274,7 @@ function Home({
     >
       <section
         id="home"
-        className="relative overflow-hidden px-4 pb-10 pt-7 scroll-mt-28 sm:px-6 sm:pb-12 lg:px-10 xl:px-12"
+        className="relative overflow-hidden px-4 pb-14 pt-9 scroll-mt-28 sm:px-6 sm:pb-16 sm:pt-10 lg:px-10 xl:px-12"
       >
         <div className="pointer-events-none absolute inset-0">
           <motion.div
@@ -284,34 +284,34 @@ function Home({
           />
         </div>
 
-        <div className="relative grid gap-8 xl:grid-cols-[minmax(0,1.3fr)_360px] xl:items-end">
-          <motion.div variants={fadeUp} className="space-y-5">
+        <div className="relative grid gap-10 xl:grid-cols-[minmax(0,1.35fr)_320px] xl:items-end">
+          <motion.div variants={fadeUp} className="space-y-6">
             <p className="type-kicker text-slate-300/38">Inicio</p>
-            <h1 className="type-hero max-w-4xl text-white">
+            <h1 className="type-hero max-w-3xl text-white">
               Tu musica, mejor presentada.
             </h1>
-            <p className="max-w-2xl text-base leading-7 text-slate-300/62 sm:text-lg">
+            <p className="max-w-xl text-base leading-7 text-slate-300/58 sm:text-lg">
               Un home limpio, con foco editorial en portadas, artistas y reproduccion.
             </p>
           </motion.div>
 
           <motion.div variants={fadeUp} className="grid grid-cols-3 gap-3">
             {stats.map(({ icon: Icon, label, value }) => (
-              <div key={label} className="surface-glass rounded-[24px] p-4">
-                <div className="flex h-10 w-10 items-center justify-center rounded-[15px] bg-slate-950/28 text-cyan-100">
-                  <Icon size={17} />
+              <div key={label} className="rounded-[22px] border border-white/7 bg-white/[0.04] p-4 backdrop-blur-xl">
+                <div className="flex h-9 w-9 items-center justify-center rounded-[14px] bg-slate-950/26 text-cyan-100">
+                  <Icon size={16} />
                 </div>
-                <p className="mt-5 text-[1.7rem] font-semibold tracking-[-0.05em] text-white">
+                <p className="mt-4 text-[1.45rem] font-semibold tracking-[-0.05em] text-white sm:text-[1.6rem]">
                   {value}
                 </p>
-                <p className="mt-1 text-sm text-slate-300/58">{label}</p>
+                <p className="mt-1 text-xs uppercase tracking-[0.16em] text-slate-300/44">{label}</p>
               </div>
             ))}
           </motion.div>
         </div>
       </section>
 
-      <div className="space-y-10 px-4 pb-12 sm:px-6 lg:px-10 xl:px-12">
+      <div className="space-y-12 px-4 pb-12 sm:px-6 lg:px-10 xl:px-12">
         <SearchResults
           query={searchTerm}
           songs={filteredSongs}

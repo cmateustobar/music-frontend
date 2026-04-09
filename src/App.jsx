@@ -175,38 +175,38 @@ function App() {
                   <div className="absolute inset-y-0 left-0 w-px bg-white/10" />
                   <div className="absolute right-0 top-[8%] h-[24rem] w-[24rem] rounded-full bg-cyan-300/8 blur-3xl" />
                 </div>
-                <div className="sticky top-0 z-20 border-b border-white/8 bg-[linear-gradient(180deg,rgba(6,11,20,0.94),rgba(6,11,20,0.78))] px-4 pb-3 pt-3 backdrop-blur-2xl sm:px-6 lg:px-10 xl:px-12">
-                  <div className="flex flex-col gap-3">
+                <div className="sticky top-0 z-20 border-b border-white/6 bg-[linear-gradient(180deg,rgba(6,11,20,0.96),rgba(6,11,20,0.8))] px-4 pb-3 pt-3 backdrop-blur-2xl sm:px-6 lg:px-10 xl:px-12">
+                  <div className="flex flex-col gap-2.5">
                     <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                       <div className="min-w-0">
-                        <p className="type-kicker text-slate-300/34">PulseBeat</p>
-                        <div className="mt-2 flex items-center gap-3">
-                          <h2 className="font-display text-[1.15rem] leading-none tracking-[-0.05em] text-white sm:text-[1.3rem]">
+                        <p className="type-kicker text-slate-300/30">PulseBeat</p>
+                        <div className="mt-1.5 flex items-center gap-3">
+                          <h2 className="font-display text-[1.08rem] leading-none tracking-[-0.05em] text-white sm:text-[1.2rem]">
                             {navSection === "home"
                               ? "Inicio"
                               : navSection === "library"
                                 ? "Explorar"
                                 : "Crear"}
                           </h2>
-                          <span className="hidden text-sm text-slate-300/42 sm:inline">
+                          <span className="hidden text-sm text-slate-300/38 sm:inline">
                             Descubre, reproduce y organiza tu catalogo
                           </span>
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-2 lg:w-[34rem]">
-                        <label className="surface-glass state-hover-lift flex h-[46px] min-w-0 flex-1 items-center gap-3 rounded-full px-4">
-                          <Search size={16} className="text-slate-300/58" />
+                      <div className="flex items-center gap-2 lg:w-[38rem]">
+                        <label className="state-hover-lift flex h-[44px] min-w-0 flex-1 items-center gap-3 rounded-full border border-white/7 bg-white/[0.04] px-4 backdrop-blur-xl">
+                          <Search size={15} className="text-slate-300/52" />
                           <input
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             placeholder="Buscar canciones o artistas"
-                            className="w-full bg-transparent text-sm text-white outline-none placeholder:text-slate-400/46"
+                            className="w-full bg-transparent text-sm text-white outline-none placeholder:text-slate-400/42"
                           />
                         </label>
 
-                        <button className="btn-icon state-hover-lift flex h-[46px] w-[46px] items-center justify-center rounded-full text-slate-100">
-                          <Bell size={17} />
+                        <button className="btn-icon state-hover-lift flex h-[44px] w-[44px] items-center justify-center rounded-full text-slate-100">
+                          <Bell size={16} />
                         </button>
                       </div>
                     </div>
@@ -222,10 +222,10 @@ function App() {
                               ? handleOpenUpload()
                               : handleNavigate(tab.id)
                           }
-                          className={`state-hover-lift rounded-full px-4 py-2 text-sm font-medium transition sm:px-4.5 ${
+                          className={`state-hover-lift rounded-full px-4 py-1.5 text-sm font-medium transition sm:px-4.5 ${
                             navSection === tab.id
                               ? "glow-active-soft border border-cyan-300/18 bg-cyan-300/10 text-white"
-                              : "border border-white/8 bg-white/[0.04] text-slate-300/72 hover:border-white/14 hover:bg-white/[0.08] hover:text-white"
+                              : "border border-white/7 bg-white/[0.035] text-slate-300/68 hover:border-white/12 hover:bg-white/[0.07] hover:text-white"
                           }`}
                         >
                           {tab.label}
