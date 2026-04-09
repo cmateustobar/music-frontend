@@ -9,6 +9,7 @@ import {
   SkipBack,
   SkipForward,
   Volume2,
+  X,
 } from "lucide-react";
 
 function formatTime(time) {
@@ -34,6 +35,7 @@ function Player() {
     setVolume,
     isShuffle,
     setIsShuffle,
+    closePlayer,
     toggleFavorite,
     isFavorite,
   } = usePlayer();
@@ -46,15 +48,7 @@ function Player() {
     : 0;
 
   if (!currentSong) {
-    return (
-      <motion.div
-        initial={{ opacity: 0, y: 18 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="surface-glass-strong panel-edge overflow-hidden rounded-[28px] p-5 text-center text-sm text-slate-300/70 sm:rounded-[34px] sm:p-6"
-      >
-        Elige una canción.
-      </motion.div>
-    );
+    return null;
   }
 
   const favorite = isFavorite(currentSong);
@@ -74,6 +68,14 @@ function Player() {
         <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(7,14,24,0.88),rgba(8,17,29,0.62)_38%,rgba(7,14,24,0.9)),radial-gradient(circle_at_top_left,rgba(103,232,249,0.18),transparent_28%),radial-gradient(circle_at_80%_20%,rgba(232,121,249,0.14),transparent_30%)]" />
         <div className="absolute inset-[1px] rounded-[27px] border border-white/7 sm:rounded-[35px]" />
       </div>
+
+      <button
+        onClick={closePlayer}
+        className="btn-icon state-hover-lift absolute right-4 top-4 z-10 flex h-10 w-10 items-center justify-center rounded-full text-slate-100"
+        title="Cerrar reproductor"
+      >
+        <X size={16} />
+      </button>
 
       <div className="relative grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(340px,0.9fr)] xl:items-center xl:gap-10">
         <div className="flex min-w-0 items-center gap-4 sm:gap-6">
@@ -96,7 +98,9 @@ function Player() {
                   initial={{ scale: 1.08, opacity: 0.8 }}
                   animate={{ scale: 1, opacity: 1 }}
                   transition={{ duration: 0.45 }}
-                  className={`h-24 w-24 object-cover transition-transform duration-700 sm:h-32 sm:w-32 ${isPlaying ? "animate-spin-slow" : ""}`}
+                  className={`h-24 w-24 object-cover transition-transform duration-700 sm:h-32 sm:w-32 ${
+                    isPlaying ? "animate-spin-slow" : ""
+                  }`}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-950/30 to-transparent" />
               </motion.div>

@@ -198,7 +198,7 @@ export const PlayerProvider = ({ children }) => {
   );
 
   const getNextIndex = useCallback(
-    (list, index, shuffleEnabled = isShuffleRef.current) => {
+    (list, index, shuffleEnabled = isShuffleRef.current, allowWrap = true) => {
       if (!list.length) return -1;
 
       if (shuffleEnabled) {
@@ -211,10 +211,40 @@ export const PlayerProvider = ({ children }) => {
         return randomIndex;
       }
 
-      return (index + 1) % list.length;
+      if (index >= list.length - 1) {
+        return allowWrap ? 0 : -1;
+      }
+
+      return index + 1;
     },
     []
   );
+
+  const closePlayer = useCallback(() => {
+    clearCrossfade();
+
+    [primaryAudioRef.current, secondaryAudioRef.current].forEach((audio) => {
+      audio.pause();
+      audio.currentTime = 0;
+      audio.removeAttribute("src");
+      audio.load();
+    });
+
+    preloadedTrackRef.current = { url: "", index: -1, ready: false };
+    queueRef.current = [];
+    queueIndexRef.current = 0;
+    currentSongRef.current = null;
+    progressSnapshotRef.current = { currentTime: 0, duration: 0 };
+
+    updateStateIfMounted(() => {
+      setCurrentSong(null);
+      setQueue([]);
+      setQueueIndex(0);
+      setIsPlaying(false);
+      setCurrentTime(0);
+      setDuration(0);
+    });
+  }, [clearCrossfade, updateStateIfMounted]);
 
   const prepareAudio = useCallback((audio, url, startAt = 0) => {
     const shouldReload = audio.src !== url;
@@ -231,7 +261,7 @@ export const PlayerProvider = ({ children }) => {
   const primeNextSong = useCallback(
     (list, index) => {
       const inactiveAudio = getInactiveAudio();
-      const nextIndex = getNextIndex(list, index);
+      const nextIndex = getNextIndex(list, index, isShuffleRef.current, false);
 
       if (nextIndex < 0) {
         clearPreloadedTrack(inactiveAudio);
@@ -419,19 +449,22 @@ export const PlayerProvider = ({ children }) => {
         0,
         currentQueue.length - 1
       );
-      const nextIndex = getNextIndex(currentQueue, safeIndex);
+      const nextIndex = getNextIndex(
+        currentQueue,
+        safeIndex,
+        isShuffleRef.current,
+        options.allowWrap ?? true
+      );
       const nextSong = currentQueue[nextIndex];
 
-      if (!nextSong) {
-        updateStateIfMounted(() => {
-          setIsPlaying(false);
-        });
+      if (nextIndex < 0 || !nextSong) {
+        closePlayer();
         return;
       }
 
       playSong(nextSong, currentQueue, nextIndex, options);
     },
-    [getNextIndex, playSong, updateStateIfMounted]
+    [closePlayer, getNextIndex, playSong]
   );
 
   const prevSong = useCallback(() => {
@@ -447,7 +480,7 @@ export const PlayerProvider = ({ children }) => {
   }, [playSong]);
 
   const nextSong = useCallback(() => {
-    playNextFromRefs({ crossfade: true });
+    playNextFromRefs({ crossfade: true, allowWrap: true });
   }, [playNextFromRefs]);
 
   const togglePlay = useCallback(async () => {
@@ -601,7 +634,7 @@ export const PlayerProvider = ({ children }) => {
         setDuration(progressSnapshotRef.current.duration);
       });
 
-      playNextFromRefs({ crossfade: true });
+      playNextFromRefs({ crossfade: true, allowWrap: false });
     };
 
     const handlePreloadReady = (event) => {
@@ -689,6 +722,7 @@ export const PlayerProvider = ({ children }) => {
       seek,
       setVolume,
       setIsShuffle,
+      closePlayer,
       toggleFavorite,
       isFavorite,
     }),
@@ -706,6 +740,7 @@ export const PlayerProvider = ({ children }) => {
       prevSong,
       seek,
       setVolume,
+      closePlayer,
       toggleFavorite,
       isFavorite,
     ]

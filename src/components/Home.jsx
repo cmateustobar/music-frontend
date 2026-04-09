@@ -52,7 +52,7 @@ function Shelf({ title, caption, songs, onPlay }) {
       <div className="-mx-4 overflow-x-auto px-4 pb-2 sm:-mx-6 sm:px-6 lg:-mx-10 lg:px-10 xl:-mx-12 xl:px-12">
         <div className="flex gap-4">
           {songs.map((song) => (
-            <div key={song._id} className="w-[180px] flex-none sm:w-[196px]">
+            <div key={song._id} className="w-[176px] flex-none sm:w-[190px]">
               <SongCard song={song} onPlay={() => onPlay(song)} deleting={false} />
             </div>
           ))}
@@ -62,9 +62,39 @@ function Shelf({ title, caption, songs, onPlay }) {
   );
 }
 
+function LibraryShelf({ title, caption, songs, onPlay }) {
+  if (!songs.length) return null;
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-end justify-between gap-3">
+        <div>
+          <p className="type-kicker text-slate-300/32">{caption}</p>
+          <h3 className="mt-2 font-display text-[1.22rem] leading-none tracking-[-0.05em] text-white">
+            {title}
+          </h3>
+        </div>
+        <button className="text-xs text-slate-300/50 transition hover:text-white">
+          Ver todo
+        </button>
+      </div>
+
+      <div className="-mx-5 overflow-x-auto px-5 pb-2 sm:-mx-6 sm:px-6">
+        <div className="flex gap-4">
+          {songs.map((song) => (
+            <div key={song._id} className="w-[156px] flex-none sm:w-[170px]">
+              <SongCard song={song} onPlay={() => onPlay(song)} deleting={false} />
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function Home({ searchTerm = "", songsVersion = 0, onOpenUpload }) {
   const [songs, setSongs] = useState([]);
-  const { playSong } = usePlayer();
+  const { playSong, favorites } = usePlayer();
 
   const loadSongs = async () => {
     const data = await fetchSongs();
@@ -90,6 +120,23 @@ function Home({ searchTerm = "", songsVersion = 0, onOpenUpload }) {
   const recentSongs = filteredSongs.slice(2, 10);
   const spotlightSongs = filteredSongs.slice(0, 12);
   const focusSongs = filteredSongs.slice(4, 10);
+  const favoriteSongs = useMemo(
+    () =>
+      favorites
+        .filter((favorite) =>
+          filteredSongs.some((song) => song._id === favorite._id)
+        )
+        .slice(0, 8),
+    [favorites, filteredSongs]
+  );
+  const albumSongs = useMemo(
+    () => filteredSongs.filter((song) => song.album).slice(0, 8),
+    [filteredSongs]
+  );
+  const singlesSongs = useMemo(
+    () => filteredSongs.filter((song) => !song.album).slice(0, 8),
+    [filteredSongs]
+  );
 
   const topArtists = useMemo(() => {
     const seen = new Map();
@@ -196,19 +243,19 @@ function Home({ searchTerm = "", songsVersion = 0, onOpenUpload }) {
                   <button
                     key={song.artist}
                     onClick={() => playFromFiltered(song)}
-                    className="group state-hover-lift w-[148px] flex-none rounded-[26px] border border-white/8 bg-white/[0.04] p-3.5 text-left hover:border-white/14 hover:bg-white/[0.08] sm:w-[164px] sm:p-4"
+                    className="group state-hover-lift w-[148px] flex-none rounded-[24px] border border-white/7 bg-white/[0.035] p-3 text-left hover:border-white/12 hover:bg-white/[0.07] sm:w-[160px]"
                   >
-                    <div className="overflow-hidden rounded-full border border-white/8 bg-slate-950/24 shadow-[0_16px_42px_rgba(2,6,23,0.28)]">
+                    <div className="overflow-hidden rounded-full border border-white/7 bg-slate-950/24 shadow-[0_16px_42px_rgba(2,6,23,0.24)]">
                       <img
                         src={song.coverUrl}
                         alt={song.artist}
                         className="aspect-square w-full object-cover transition duration-500 group-hover:scale-105"
                       />
                     </div>
-                    <p className="mt-4 truncate text-[0.95rem] font-semibold tracking-[-0.03em] text-white">
+                    <p className="mt-4 truncate text-[0.92rem] font-semibold tracking-[-0.03em] text-white">
                       {song.artist}
                     </p>
-                    <p className="mt-1 text-xs uppercase tracking-[0.18em] text-slate-300/42">
+                    <p className="mt-1 text-[10px] uppercase tracking-[0.18em] text-slate-300/42">
                       Artista
                     </p>
                   </button>
@@ -236,43 +283,89 @@ function Home({ searchTerm = "", songsVersion = 0, onOpenUpload }) {
             <p className="text-sm text-slate-300/52">{filteredSongs.length} resultados</p>
           </div>
 
-          <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
+          <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_300px]">
             <motion.div
               variants={fadeUp}
               className="surface-glass panel-edge min-w-0 rounded-[30px] p-5 sm:p-6"
             >
-              <SongList songs={spotlightSongs} onDelete={loadSongs} />
+              <div className="space-y-8">
+                {!!favoriteSongs.length && (
+                  <LibraryShelf
+                    title="Favoritos"
+                    caption="Guardado por ti"
+                    songs={favoriteSongs}
+                    onPlay={playFromFiltered}
+                  />
+                )}
+
+                <LibraryShelf
+                  title="Recientes"
+                  caption="Ultimas incorporaciones"
+                  songs={spotlightSongs}
+                  onPlay={playFromFiltered}
+                />
+
+                {!!albumSongs.length && (
+                  <LibraryShelf
+                    title="Albums"
+                    caption="Formato largo"
+                    songs={albumSongs}
+                    onPlay={playFromFiltered}
+                  />
+                )}
+
+                {!!singlesSongs.length && (
+                  <LibraryShelf
+                    title="Singles"
+                    caption="Pistas sueltas"
+                    songs={singlesSongs}
+                    onPlay={playFromFiltered}
+                  />
+                )}
+
+                <div className="border-t border-white/8 pt-8">
+                  <div className="mb-5 flex items-end justify-between gap-3">
+                    <div>
+                      <p className="type-kicker text-slate-300/32">Catalogo</p>
+                      <h3 className="mt-2 font-display text-[1.22rem] leading-none tracking-[-0.05em] text-white">
+                        Gestion completa
+                      </h3>
+                    </div>
+                  </div>
+                  <SongList songs={spotlightSongs} onDelete={loadSongs} />
+                </div>
+              </div>
             </motion.div>
 
             <motion.aside variants={fadeUp} className="space-y-4">
-              <div className="surface-glass panel-edge rounded-[26px] p-5">
+              <div className="surface-glass panel-edge rounded-[24px] p-5">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-[18px] bg-slate-950/30 text-cyan-100">
-                    <UploadCloud size={19} />
+                  <div className="flex h-10 w-10 items-center justify-center rounded-[16px] bg-slate-950/30 text-cyan-100">
+                    <UploadCloud size={18} />
                   </div>
                   <div>
                     <p className="type-kicker text-cyan-100/52">Crear</p>
-                    <h3 className="mt-1 font-display text-[1.35rem] leading-none tracking-[-0.05em] text-white">
+                    <h3 className="mt-1 font-display text-[1.22rem] leading-none tracking-[-0.05em] text-white">
                       Publica nueva musica
                     </h3>
                   </div>
                 </div>
-                <p className="mt-4 text-sm leading-6 text-slate-300/54">
+                <p className="mt-4 text-sm leading-6 text-slate-300/52">
                   Mantiene la creacion disponible, pero fuera del flujo principal de escucha.
                 </p>
                 <button
                   onClick={onOpenUpload}
-                  className="btn-primary state-hover-lift mt-5 flex w-full items-center justify-center gap-2 rounded-[20px] px-4 py-3 font-medium"
+                  className="btn-primary state-hover-lift mt-5 flex w-full items-center justify-center gap-2 rounded-[18px] px-4 py-3 font-medium"
                 >
                   <UploadCloud size={16} /> Abrir estudio
                 </button>
               </div>
 
-              <div className="surface-glass rounded-[26px] p-5">
+              <div className="surface-glass rounded-[24px] p-5">
                 <div className="flex items-end justify-between gap-3">
                   <div>
                     <p className="type-kicker text-slate-300/36">Foco</p>
-                    <h3 className="mt-2 font-display text-[1.2rem] leading-none tracking-[-0.05em] text-white">
+                    <h3 className="mt-2 font-display text-[1.12rem] leading-none tracking-[-0.05em] text-white">
                       Para seguir escuchando
                     </h3>
                   </div>
@@ -281,30 +374,30 @@ function Home({ searchTerm = "", songsVersion = 0, onOpenUpload }) {
                   </button>
                 </div>
 
-                <div className="mt-4 space-y-2.5">
+                <div className="mt-4 space-y-2">
                   {focusSongs.map((song, index) => (
                     <button
                       key={song._id}
                       onClick={() => playFromFiltered(song)}
-                      className="state-hover-lift flex w-full items-center gap-3 rounded-[18px] border border-white/6 bg-white/[0.03] p-2.5 text-left hover:border-white/12 hover:bg-white/[0.07]"
+                      className="state-hover-lift flex w-full items-center gap-3 rounded-[16px] border border-white/6 bg-white/[0.03] px-2.5 py-2 text-left hover:border-white/12 hover:bg-white/[0.07]"
                     >
-                      <div className="relative shrink-0">
+                      <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-[12px]">
                         <img
                           src={song.coverUrl}
                           alt={song.title}
-                          className="h-14 w-14 rounded-[14px] object-cover"
+                          className="h-full w-full object-cover"
                         />
-                        <div className="absolute inset-0 rounded-[14px] bg-gradient-to-t from-slate-950/28 to-transparent" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/28 to-transparent" />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-medium tracking-[-0.03em] text-white">
+                        <p className="truncate text-[0.92rem] font-medium tracking-[-0.03em] text-white">
                           {song.title}
                         </p>
-                        <p className="mt-1 truncate text-xs text-slate-300/52">
+                        <p className="mt-0.5 truncate text-[11px] text-slate-300/50">
                           {song.artist}
                         </p>
                       </div>
-                      <div className="shrink-0 text-[10px] uppercase tracking-[0.18em] text-slate-400/44">
+                      <div className="shrink-0 text-[10px] uppercase tracking-[0.18em] text-slate-400/40">
                         0{index + 1}
                       </div>
                     </button>
@@ -312,13 +405,13 @@ function Home({ searchTerm = "", songsVersion = 0, onOpenUpload }) {
                 </div>
               </div>
 
-              <div className="rounded-[26px] border border-white/6 bg-white/[0.03] p-4">
+              <div className="rounded-[24px] border border-white/6 bg-white/[0.03] p-4">
                 <p className="type-kicker text-slate-300/34">Sesion</p>
-                <h3 className="mt-2 font-display text-[1.1rem] leading-none tracking-[-0.05em] text-white">
-                  Para seguir escuchando
+                <h3 className="mt-2 font-display text-[1.05rem] leading-none tracking-[-0.05em] text-white">
+                  Reproduce sin friccion
                 </h3>
-                <p className="mt-3 text-sm leading-6 text-slate-300/50">
-                  Curaduria ligera, acceso rapido y foco total en reproducir.
+                <p className="mt-3 text-sm leading-6 text-slate-300/48">
+                  Curaduria ligera, acceso rapido y foco total en el reproductor.
                 </p>
               </div>
             </motion.aside>
