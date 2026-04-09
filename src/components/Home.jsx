@@ -4,6 +4,7 @@ import {
   ArrowRight,
   Disc3,
   Headphones,
+  Search,
   Sparkles,
   UploadCloud,
 } from "lucide-react";
@@ -31,6 +32,14 @@ const fadeUp = {
     transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] },
   },
 };
+
+const libraryFilters = [
+  { id: "all", label: "Todo" },
+  { id: "favorites", label: "Favoritos" },
+  { id: "albums", label: "Albums" },
+  { id: "singles", label: "Singles" },
+  { id: "recent", label: "Recientes" },
+];
 
 function Shelf({ title, caption, songs, onPlay }) {
   if (!songs.length) return null;
@@ -62,33 +71,68 @@ function Shelf({ title, caption, songs, onPlay }) {
   );
 }
 
-function LibraryShelf({ title, caption, songs, onPlay }) {
-  if (!songs.length) return null;
+function SearchResults({ query, songs, artists, onPlay }) {
+  if (!query) return null;
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-end justify-between gap-3">
-        <div>
-          <p className="type-kicker text-slate-300/32">{caption}</p>
-          <h3 className="mt-2 font-display text-[1.22rem] leading-none tracking-[-0.05em] text-white">
-            {title}
-          </h3>
+    <motion.section variants={fadeUp} className="space-y-5">
+      <div className="surface-glass panel-edge rounded-[28px] p-5 sm:p-6">
+        <div className="flex items-center gap-3">
+          <div className="flex h-11 w-11 items-center justify-center rounded-[16px] bg-slate-950/30 text-cyan-100">
+            <Search size={18} />
+          </div>
+          <div>
+            <p className="type-kicker text-slate-300/36">Busqueda</p>
+            <h3 className="mt-2 font-display text-[1.35rem] leading-none tracking-[-0.05em] text-white">
+              Resultados para "{query}"
+            </h3>
+          </div>
         </div>
-        <button className="text-xs text-slate-300/50 transition hover:text-white">
-          Ver todo
-        </button>
-      </div>
 
-      <div className="-mx-5 overflow-x-auto px-5 pb-2 sm:-mx-6 sm:px-6">
-        <div className="flex gap-4">
-          {songs.map((song) => (
-            <div key={song._id} className="w-[156px] flex-none sm:w-[170px]">
-              <SongCard song={song} onPlay={() => onPlay(song)} deleting={false} />
-            </div>
-          ))}
-        </div>
+        {!!artists.length && (
+          <div className="mt-5 flex flex-wrap gap-2">
+            {artists.map((artist) => (
+              <div
+                key={artist}
+                className="rounded-full border border-white/8 bg-white/[0.05] px-3 py-2 text-sm text-slate-200/70"
+              >
+                {artist}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {!songs.length && (
+          <div className="mt-5 rounded-[22px] border border-white/8 bg-white/[0.03] px-4 py-5 text-sm text-slate-300/58">
+            No encontramos canciones o artistas con ese termino.
+          </div>
+        )}
+
+        {!!songs.length && (
+          <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            {songs.slice(0, 6).map((song) => (
+              <button
+                key={song._id}
+                onClick={() => onPlay(song)}
+                className="state-hover-lift flex items-center gap-3 rounded-[20px] border border-white/7 bg-white/[0.04] p-3 text-left hover:border-white/12 hover:bg-white/[0.08]"
+              >
+                <img
+                  src={song.coverUrl}
+                  alt={song.title}
+                  className="h-14 w-14 rounded-[14px] object-cover"
+                />
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium tracking-[-0.03em] text-white">
+                    {song.title}
+                  </p>
+                  <p className="mt-1 truncate text-xs text-slate-300/52">{song.artist}</p>
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
       </div>
-    </div>
+    </motion.section>
   );
 }
 
@@ -99,7 +143,8 @@ function Home({
   isAuthenticated = false,
 }) {
   const [songs, setSongs] = useState([]);
-  const { playSong, favorites } = usePlayer();
+  const [libraryFilter, setLibraryFilter] = useState("all");
+  const { playSong, favorites, currentSong } = usePlayer();
 
   const loadSongs = async () => {
     const data = await fetchSongs();
@@ -110,38 +155,70 @@ function Home({
     loadSongs();
   }, [songsVersion]);
 
+  const normalizedQuery = searchTerm.trim().toLowerCase();
+
   const filteredSongs = useMemo(() => {
-    const query = searchTerm.trim().toLowerCase();
-    if (!query) return songs;
+    if (!normalizedQuery) return songs;
 
     return songs.filter((song) =>
       [song.title, song.artist, song.album]
         .filter(Boolean)
-        .some((value) => value.toLowerCase().includes(query))
+        .some((value) => value.toLowerCase().includes(normalizedQuery))
     );
-  }, [songs, searchTerm]);
+  }, [songs, normalizedQuery]);
 
-  const featuredSongs = filteredSongs.slice(0, 6);
-  const recentSongs = filteredSongs.slice(2, 10);
-  const spotlightSongs = filteredSongs.slice(0, 12);
-  const focusSongs = filteredSongs.slice(4, 10);
   const favoriteSongs = useMemo(
     () =>
-      favorites
-        .filter((favorite) =>
-          filteredSongs.some((song) => song._id === favorite._id)
-        )
-        .slice(0, 8),
-    [favorites, filteredSongs]
+      favorites.filter((favorite) =>
+        songs.some((song) => song._id === favorite._id)
+      ),
+    [favorites, songs]
   );
+
   const albumSongs = useMemo(
-    () => filteredSongs.filter((song) => song.album).slice(0, 8),
-    [filteredSongs]
+    () => songs.filter((song) => song.album),
+    [songs]
   );
+
   const singlesSongs = useMemo(
-    () => filteredSongs.filter((song) => !song.album).slice(0, 8),
-    [filteredSongs]
+    () => songs.filter((song) => !song.album),
+    [songs]
   );
+
+  const recentSongs = useMemo(() => songs.slice(0, 10), [songs]);
+
+  const librarySongs = useMemo(() => {
+    const source =
+      libraryFilter === "favorites"
+        ? favoriteSongs
+        : libraryFilter === "albums"
+          ? albumSongs
+          : libraryFilter === "singles"
+            ? singlesSongs
+            : libraryFilter === "recent"
+              ? recentSongs
+              : filteredSongs;
+
+    if (!normalizedQuery) return source;
+
+    return source.filter((song) =>
+      [song.title, song.artist, song.album]
+        .filter(Boolean)
+        .some((value) => value.toLowerCase().includes(normalizedQuery))
+    );
+  }, [
+    albumSongs,
+    favoriteSongs,
+    filteredSongs,
+    libraryFilter,
+    normalizedQuery,
+    recentSongs,
+    singlesSongs,
+  ]);
+
+  const featuredSongs = filteredSongs.slice(0, 6);
+  const radarSongs = filteredSongs.slice(2, 10);
+  const focusSongs = filteredSongs.slice(0, 6);
 
   const topArtists = useMemo(() => {
     const seen = new Map();
@@ -154,6 +231,19 @@ function Home({
 
     return Array.from(seen.values()).slice(0, 6);
   }, [filteredSongs]);
+
+  const artistMatches = useMemo(() => {
+    if (!normalizedQuery) return [];
+
+    return Array.from(
+      new Set(
+        songs
+          .map((song) => song.artist)
+          .filter(Boolean)
+          .filter((artist) => artist.toLowerCase().includes(normalizedQuery))
+      )
+    ).slice(0, 6);
+  }, [songs, normalizedQuery]);
 
   const stats = useMemo(
     () => [
@@ -169,8 +259,9 @@ function Home({
   );
 
   const playFromFiltered = (song) => {
-    const index = filteredSongs.findIndex((item) => item._id === song._id);
-    playSong(song, filteredSongs, index < 0 ? 0 : index);
+    const playbackPool = filteredSongs.length ? filteredSongs : songs;
+    const index = playbackPool.findIndex((item) => item._id === song._id);
+    playSong(song, playbackPool, index < 0 ? 0 : index);
   };
 
   return (
@@ -221,6 +312,13 @@ function Home({
       </section>
 
       <div className="space-y-10 px-4 pb-12 sm:px-6 lg:px-10 xl:px-12">
+        <SearchResults
+          query={searchTerm}
+          songs={filteredSongs}
+          artists={artistMatches}
+          onPlay={playFromFiltered}
+        />
+
         <Shelf
           title="Seleccion destacada"
           caption="Curado para ti"
@@ -273,19 +371,35 @@ function Home({
         <Shelf
           title="Recientes en tu radar"
           caption="Escucha inmediata"
-          songs={recentSongs}
+          songs={radarSongs}
           onPlay={playFromFiltered}
         />
 
-        <section id="library" className="space-y-10 scroll-mt-28">
-          <div className="flex items-end justify-between gap-4">
+        <section id="library" className="space-y-6 scroll-mt-28">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <p className="type-kicker text-slate-300/36">Coleccion</p>
               <h2 className="mt-2 font-display text-[1.8rem] leading-none tracking-[-0.05em] text-white">
                 Biblioteca visual
               </h2>
             </div>
-            <p className="text-sm text-slate-300/52">{filteredSongs.length} resultados</p>
+            <p className="text-sm text-slate-300/52">{librarySongs.length} resultados</p>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            {libraryFilters.map((filter) => (
+              <button
+                key={filter.id}
+                onClick={() => setLibraryFilter(filter.id)}
+                className={`state-hover-lift rounded-full px-4 py-2 text-sm transition ${
+                  libraryFilter === filter.id
+                    ? "glow-active-soft border border-cyan-300/18 bg-cyan-300/10 text-white"
+                    : "border border-white/8 bg-white/[0.04] text-slate-300/68 hover:border-white/14 hover:bg-white/[0.08] hover:text-white"
+                }`}
+              >
+                {filter.label}
+              </button>
+            ))}
           </div>
 
           <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_300px]">
@@ -293,53 +407,7 @@ function Home({
               variants={fadeUp}
               className="surface-glass panel-edge min-w-0 rounded-[30px] p-5 sm:p-6"
             >
-              <div className="space-y-8">
-                {!!favoriteSongs.length && (
-                  <LibraryShelf
-                    title="Favoritos"
-                    caption="Guardado por ti"
-                    songs={favoriteSongs}
-                    onPlay={playFromFiltered}
-                  />
-                )}
-
-                <LibraryShelf
-                  title="Recientes"
-                  caption="Ultimas incorporaciones"
-                  songs={spotlightSongs}
-                  onPlay={playFromFiltered}
-                />
-
-                {!!albumSongs.length && (
-                  <LibraryShelf
-                    title="Albums"
-                    caption="Formato largo"
-                    songs={albumSongs}
-                    onPlay={playFromFiltered}
-                  />
-                )}
-
-                {!!singlesSongs.length && (
-                  <LibraryShelf
-                    title="Singles"
-                    caption="Pistas sueltas"
-                    songs={singlesSongs}
-                    onPlay={playFromFiltered}
-                  />
-                )}
-
-                <div className="border-t border-white/8 pt-8">
-                  <div className="mb-5 flex items-end justify-between gap-3">
-                    <div>
-                      <p className="type-kicker text-slate-300/32">Catalogo</p>
-                      <h3 className="mt-2 font-display text-[1.22rem] leading-none tracking-[-0.05em] text-white">
-                        Gestion completa
-                      </h3>
-                    </div>
-                  </div>
-                  <SongList songs={spotlightSongs} onDelete={loadSongs} />
-                </div>
-              </div>
+              <SongList songs={librarySongs} onDelete={loadSongs} />
             </motion.div>
 
             <motion.aside variants={fadeUp} className="space-y-4">
@@ -351,7 +419,9 @@ function Home({
                   <div>
                     <p className="type-kicker text-cyan-100/52">Crear</p>
                     <h3 className="mt-1 font-display text-[1.22rem] leading-none tracking-[-0.05em] text-white">
-                      {isAuthenticated ? "Publica nueva musica" : "Inicia sesion para publicar"}
+                      {isAuthenticated
+                        ? "Publica nueva musica"
+                        : "Inicia sesion para publicar"}
                     </h3>
                   </div>
                 </div>
@@ -364,7 +434,8 @@ function Home({
                   onClick={onOpenUpload}
                   className="btn-primary state-hover-lift mt-5 flex w-full items-center justify-center gap-2 rounded-[18px] px-4 py-3 font-medium"
                 >
-                  <UploadCloud size={16} /> {isAuthenticated ? "Abrir estudio" : "Entrar para subir"}
+                  <UploadCloud size={16} />{" "}
+                  {isAuthenticated ? "Abrir estudio" : "Entrar para subir"}
                 </button>
               </div>
 
@@ -382,33 +453,41 @@ function Home({
                 </div>
 
                 <div className="mt-4 space-y-2">
-                  {focusSongs.map((song, index) => (
-                    <button
-                      key={song._id}
-                      onClick={() => playFromFiltered(song)}
-                      className="state-hover-lift flex w-full items-center gap-3 rounded-[16px] border border-white/6 bg-white/[0.03] px-2.5 py-2 text-left hover:border-white/12 hover:bg-white/[0.07]"
-                    >
-                      <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-[12px]">
-                        <img
-                          src={song.coverUrl}
-                          alt={song.title}
-                          className="h-full w-full object-cover"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/28 to-transparent" />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-[0.92rem] font-medium tracking-[-0.03em] text-white">
-                          {song.title}
-                        </p>
-                        <p className="mt-0.5 truncate text-[11px] text-slate-300/50">
-                          {song.artist}
-                        </p>
-                      </div>
-                      <div className="shrink-0 text-[10px] uppercase tracking-[0.18em] text-slate-400/40">
-                        0{index + 1}
-                      </div>
-                    </button>
-                  ))}
+                  {focusSongs.map((song, index) => {
+                    const isActive = currentSong?._id === song._id;
+
+                    return (
+                      <button
+                        key={song._id}
+                        onClick={() => playFromFiltered(song)}
+                        className={`state-hover-lift flex w-full items-center gap-3 rounded-[16px] border px-2.5 py-2 text-left ${
+                          isActive
+                            ? "glow-active-soft border-cyan-300/16 bg-cyan-300/[0.08]"
+                            : "border-white/6 bg-white/[0.03] hover:border-white/12 hover:bg-white/[0.07]"
+                        }`}
+                      >
+                        <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-[12px]">
+                          <img
+                            src={song.coverUrl}
+                            alt={song.title}
+                            className="h-full w-full object-cover"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/28 to-transparent" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-[0.92rem] font-medium tracking-[-0.03em] text-white">
+                            {song.title}
+                          </p>
+                          <p className="mt-0.5 truncate text-[11px] text-slate-300/50">
+                            {song.artist}
+                          </p>
+                        </div>
+                        <div className="shrink-0 text-[10px] uppercase tracking-[0.18em] text-slate-400/40">
+                          {isActive ? "Live" : `0${index + 1}`}
+                        </div>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 

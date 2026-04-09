@@ -712,6 +712,8 @@ export const PlayerProvider = ({ children }) => {
   const contextValue = useMemo(
     () => ({
       currentSong,
+      queue,
+      queueIndex,
       isPlaying,
       isShuffle,
       currentTime,
@@ -731,6 +733,8 @@ export const PlayerProvider = ({ children }) => {
     }),
     [
       currentSong,
+      queue,
+      queueIndex,
       isPlaying,
       isShuffle,
       currentTime,
