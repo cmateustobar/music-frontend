@@ -152,3 +152,50 @@ export const login = async (credentials) => {
 export const logout = () => {
   localStorage.removeItem("token");
 };
+
+export const uploadSongsBulk = async (formData) => {
+  try {
+    const res = await fetch(`${BASE_URL}/api/songs/upload/bulk`, {
+      method: "POST",
+      headers: {
+        ...getAuthHeaders(),
+      },
+      body: formData,
+    });
+
+    if (!res.ok) {
+      const errorData = await safeJson(res);
+      console.error("Bulk upload error:", errorData);
+      throw new Error(errorData?.message || "No se pudo completar la carga masiva");
+    }
+
+    return await safeJson(res);
+  } catch (error) {
+    console.error("uploadSongsBulk error:", error);
+    throw error;
+  }
+};
+
+export const importSongFromUrl = async (payload) => {
+  try {
+    const res = await fetch(`${BASE_URL}/api/songs/import-url`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeaders(),
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!res.ok) {
+      const errorData = await safeJson(res);
+      console.error("Import URL error:", errorData);
+      throw new Error(errorData?.message || "No se pudo importar la cancion");
+    }
+
+    return await safeJson(res);
+  } catch (error) {
+    console.error("importSongFromUrl error:", error);
+    throw error;
+  }
+};

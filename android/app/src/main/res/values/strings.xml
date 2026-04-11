@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">PulseBeat</string>
+    <string name="title_activity_main">PulseBeat</string>
+    <string name="package_name">com.cmate.pulsebeat</string>
+    <string name="custom_url_scheme">com.cmate.pulsebeat</string>
+</resources>
