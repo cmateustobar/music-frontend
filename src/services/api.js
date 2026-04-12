@@ -190,7 +190,9 @@ export const importSongFromUrl = async (payload) => {
     if (!res.ok) {
       const errorData = await safeJson(res);
       console.error("Import URL error:", errorData);
-      throw new Error(errorData?.message || "No se pudo importar la cancion");
+      throw new Error(
+        errorData?.message || `No se pudo importar la cancion (${res.status})`
+      );
     }
 
     return await safeJson(res);

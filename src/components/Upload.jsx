@@ -153,7 +153,7 @@ function Upload({ onUpload, onSuccess, compact = false }) {
         mode === "bulk"
           ? "No pudimos completar la carga masiva. Revisa tu sesion y vuelve a intentar."
           : mode === "url"
-            ? "No pudimos importar la cancion. Revisa las URLs y tu sesion."
+            ? error.message || "No pudimos importar la cancion. Revisa las URLs y tu sesion."
           : "No pudimos publicar la cancion. Revisa tu sesion y vuelve a intentar."
       );
     } finally {
