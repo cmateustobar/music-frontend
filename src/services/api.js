@@ -201,3 +201,29 @@ export const importSongFromUrl = async (payload) => {
     throw error;
   }
 };
+
+export const importSongsFromUrls = async (songs) => {
+  try {
+    const res = await fetch(`${BASE_URL}/api/songs/import-urls`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeaders(),
+      },
+      body: JSON.stringify({ songs }),
+    });
+
+    if (!res.ok) {
+      const errorData = await safeJson(res);
+      console.error("Import URLs error:", errorData);
+      throw new Error(
+        errorData?.message || `No se pudo importar el lote (${res.status})`
+      );
+    }
+
+    return await safeJson(res);
+  } catch (error) {
+    console.error("importSongsFromUrls error:", error);
+    throw error;
+  }
+};

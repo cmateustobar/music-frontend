@@ -9,7 +9,12 @@ import {
   Send,
   UploadCloud,
 } from "lucide-react";
-import { importSongFromUrl, uploadSong, uploadSongsBulk } from "../services/api";
+import {
+  importSongFromUrl,
+  importSongsFromUrls,
+  uploadSong,
+  uploadSongsBulk,
+} from "../services/api";
 
 const baseField = "ds-input w-full px-4 py-3 text-sm sm:px-5 sm:py-3.5";
 
@@ -29,6 +34,8 @@ function Upload({ onUpload, onSuccess, compact = false }) {
   const [image, setImage] = useState(null);
   const [audioUrl, setAudioUrl] = useState("");
   const [coverUrl, setCoverUrl] = useState("");
+  const [urlImportMode, setUrlImportMode] = useState("single");
+  const [urlBatchText, setUrlBatchText] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
@@ -60,6 +67,42 @@ function Upload({ onUpload, onSuccess, compact = false }) {
     setImage(null);
     setAudioUrl("");
     setCoverUrl("");
+    setUrlBatchText("");
+  };
+
+  const parseUrlBatch = () => {
+    const rows = urlBatchText
+      .split("\n")
+      .map((line) => line.trim())
+      .filter(Boolean);
+
+    if (!rows.length) {
+      throw new Error("Pega al menos una fila para importar.");
+    }
+
+    return rows.map((row, index) => {
+      const parts = row.split("|").map((part) => part.trim());
+
+      if (parts.length < 4) {
+        throw new Error(
+          `Fila ${index + 1}: usa titulo | artista | audioUrl | coverUrl`
+        );
+      }
+
+      const hasAlbum = parts.length >= 5;
+      const [rowTitle, rowArtist] = parts;
+      const rowAlbum = hasAlbum ? parts[2] : "";
+      const rowAudioUrl = hasAlbum ? parts[3] : parts[2];
+      const rowCoverUrl = hasAlbum ? parts[4] : parts[3];
+
+      return {
+        title: rowTitle,
+        artist: rowArtist,
+        album: rowAlbum,
+        audioUrl: rowAudioUrl,
+        coverUrl: rowCoverUrl,
+      };
+    });
   };
 
   const handleSingleUpload = async () => {
@@ -107,6 +150,13 @@ function Upload({ onUpload, onSuccess, compact = false }) {
   };
 
   const handleUrlImport = async () => {
+    if (urlImportMode === "bulk") {
+      const songs = parseUrlBatch();
+      const response = await importSongsFromUrls(songs);
+      setSuccessMessage(`${response?.count || songs.length} canciones importadas desde hosting.`);
+      return true;
+    }
+
     if (!title.trim() || !artist.trim()) {
       setErrorMessage("Completa titulo y artista antes de importar.");
       return false;
@@ -274,54 +324,108 @@ function Upload({ onUpload, onSuccess, compact = false }) {
           </div>
 
           {mode === "url" ? (
-            <div className="grid gap-4 lg:grid-cols-2">
-              <motion.label
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: 0.26 }}
-                className="block rounded-[22px] border border-white/10 bg-white/[0.045] p-4 text-sm text-slate-300/65 backdrop-blur-xl sm:rounded-[24px]"
-              >
-                <span className="mb-3 flex items-center gap-2 font-medium text-white">
-                  <Link size={16} /> URL publica del audio
-                </span>
-                <input
-                  type="url"
-                  placeholder="https://tu-dominio.com/music-repository/audio/cancion.mp3"
-                  value={audioUrl}
-                  onChange={(e) => {
-                    clearMessages();
-                    setAudioUrl(e.target.value);
-                  }}
-                  className={baseField}
-                />
-                <p className="mt-3 text-xs leading-5 text-slate-300/48">
-                  Debe abrir o descargar el audio directamente en el navegador.
-                </p>
-              </motion.label>
+            <div className="space-y-4">
+              <div className="inline-flex rounded-full border border-white/8 bg-slate-950/24 p-1">
+                {[
+                  ["single", "Una URL"],
+                  ["bulk", "Lote de URLs"],
+                ].map(([id, label]) => (
+                  <button
+                    key={id}
+                    type="button"
+                    onClick={() => {
+                      clearMessages();
+                      setUrlImportMode(id);
+                    }}
+                    className={`rounded-full px-4 py-2 text-xs font-medium transition ${
+                      urlImportMode === id
+                        ? "bg-cyan-300/14 text-white"
+                        : "text-slate-300/58 hover:bg-white/[0.06] hover:text-white"
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
 
-              <motion.label
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: 0.32 }}
-                className="block rounded-[22px] border border-white/10 bg-white/[0.045] p-4 text-sm text-slate-300/65 backdrop-blur-xl sm:rounded-[24px]"
-              >
-                <span className="mb-3 flex items-center gap-2 font-medium text-white">
-                  <ImagePlus size={16} /> URL publica de la portada
-                </span>
-                <input
-                  type="url"
-                  placeholder="https://tu-dominio.com/music-repository/covers/portada.jpg"
-                  value={coverUrl}
-                  onChange={(e) => {
-                    clearMessages();
-                    setCoverUrl(e.target.value);
-                  }}
-                  className={baseField}
-                />
-                <p className="mt-3 text-xs leading-5 text-slate-300/48">
-                  Usa una imagen publica y cuadrada para que la card se vea bien.
-                </p>
-              </motion.label>
+              {urlImportMode === "bulk" ? (
+                <motion.label
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4, delay: 0.26 }}
+                  className="block rounded-[22px] border border-white/10 bg-white/[0.045] p-4 text-sm text-slate-300/65 backdrop-blur-xl sm:rounded-[24px]"
+                >
+                  <span className="mb-3 flex items-center gap-2 font-medium text-white">
+                    <Files size={16} /> Lote desde hosting
+                  </span>
+                  <textarea
+                    value={urlBatchText}
+                    onChange={(e) => {
+                      clearMessages();
+                      setUrlBatchText(e.target.value);
+                    }}
+                    rows={8}
+                    placeholder={[
+                      "Titulo | Artista | audioUrl | coverUrl",
+                      "Titulo | Artista | Album | audioUrl | coverUrl",
+                    ].join("\n")}
+                    className="ds-input min-h-44 w-full resize-y px-4 py-3 text-sm leading-6"
+                  />
+                  <p className="mt-3 text-xs leading-5 text-slate-300/48">
+                    Una cancion por linea. Usa el separador vertical | entre campos.
+                  </p>
+                </motion.label>
+              ) : (
+                <div className="grid gap-4 lg:grid-cols-2">
+                  <motion.label
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4, delay: 0.26 }}
+                    className="block rounded-[22px] border border-white/10 bg-white/[0.045] p-4 text-sm text-slate-300/65 backdrop-blur-xl sm:rounded-[24px]"
+                  >
+                    <span className="mb-3 flex items-center gap-2 font-medium text-white">
+                      <Link size={16} /> URL publica del audio
+                    </span>
+                    <input
+                      type="url"
+                      placeholder="https://tu-dominio.com/music-repository/audio/cancion.mp3"
+                      value={audioUrl}
+                      onChange={(e) => {
+                        clearMessages();
+                        setAudioUrl(e.target.value);
+                      }}
+                      className={baseField}
+                    />
+                    <p className="mt-3 text-xs leading-5 text-slate-300/48">
+                      Debe abrir o descargar el audio directamente en el navegador.
+                    </p>
+                  </motion.label>
+
+                  <motion.label
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4, delay: 0.32 }}
+                    className="block rounded-[22px] border border-white/10 bg-white/[0.045] p-4 text-sm text-slate-300/65 backdrop-blur-xl sm:rounded-[24px]"
+                  >
+                    <span className="mb-3 flex items-center gap-2 font-medium text-white">
+                      <ImagePlus size={16} /> URL publica de la portada
+                    </span>
+                    <input
+                      type="url"
+                      placeholder="https://tu-dominio.com/music-repository/covers/portada.jpg"
+                      value={coverUrl}
+                      onChange={(e) => {
+                        clearMessages();
+                        setCoverUrl(e.target.value);
+                      }}
+                      className={baseField}
+                    />
+                    <p className="mt-3 text-xs leading-5 text-slate-300/48">
+                      Usa una imagen publica y cuadrada para que la card se vea bien.
+                    </p>
+                  </motion.label>
+                </div>
+              )}
             </div>
           ) : (
           <div className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
@@ -452,12 +556,16 @@ function Upload({ onUpload, onSuccess, compact = false }) {
               ? mode === "bulk"
                 ? "Importando lote..."
                 : mode === "url"
-                  ? "Registrando..."
+                  ? urlImportMode === "bulk"
+                    ? "Importando URLs..."
+                    : "Registrando..."
                 : "Publicando..."
               : mode === "bulk"
                 ? "Importar lote"
                 : mode === "url"
-                  ? "Guardar URL en biblioteca"
+                  ? urlImportMode === "bulk"
+                    ? "Importar lote desde hosting"
+                    : "Guardar URL en biblioteca"
                 : "Publicar"}
           </motion.button>
         </form>
